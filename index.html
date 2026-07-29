@@ -132,8 +132,8 @@
   .rep-counter{font-size:18px;color:var(--text);margin-bottom:18px;}
   .rep-counter span{color:var(--sub);}
 
-  .dashes{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-width:520px;margin:0 auto 22px;}
-  .dash{width:9px;height:16px;border-radius:2px;background:var(--line);}
+  .dashes{display:flex;flex-wrap:nowrap;gap:3px;justify-content:center;width:100%;margin:0 auto 22px;overflow:hidden;}
+  .dash{flex:1 1 0;min-width:2px;max-width:14px;height:16px;border-radius:2px;background:var(--line);}
   .dash.filled{background:var(--press);}
   .dash.filled.rest-marker{background:var(--rest);}
 
@@ -245,7 +245,7 @@
 const EXERCISES = [
   { id:1, name:"Wall press series", cat:"Strengthening",
     note:"Isometric wall press through three positions: fist push, forearm push inward, forearm push outward. A longer rest kicks in when switching position.",
-    holdSec:3, restSec:2, phaseGapSec:5,
+    holdSec:5, restSec:2, phaseGapSec:5,
     phases:[
       { label:"Fist push", reps:30 },
       { label:"Push inward", reps:30 },
@@ -267,15 +267,15 @@ const EXERCISES = [
       { label:"Pushing down", reps:30 },
     ]},
   { id:8, name:"Resistance band side step", cat:"Strengthening",
-    note:"Elastic resistance side step, one set stepping left and one set stepping right.",
-    holdSec:3, restSec:2,
+    note:"Elastic resistance side step, one set stepping left and one set stepping right. A longer rest kicks in when switching direction.",
+    holdSec:5, restSec:3, phaseGapSec:5,
     phases:[
       { label:"Step left", reps:24 },
       { label:"Step right", reps:24 },
     ]},
   { id:9, name:"Sword pull diagonal lift", cat:"Functional",
     note:"Diagonal PNF pattern, one set per direction. A longer rest kicks in when switching direction.",
-    holdSec:3, restSec:2, phaseGapSec:5,
+    holdSec:5, restSec:3, phaseGapSec:5,
     phases:[
       { label:"Diagonal up and out", reps:24 },
       { label:"Diagonal down and in", reps:24 },
@@ -285,7 +285,7 @@ const EXERCISES = [
     holdSec:3, restSec:0, reps:30 },
   { id:11, name:"45-degree shoulder lift", cat:"Strengthening",
     note:"Scaption, shoulder elevation in the scapular plane to eye level, 3 lb weight.",
-    holdSec:5, restSec:2, reps:24 },
+    holdSec:5, restSec:3, reps:24 },
   { id:12, name:"Ulnar nerve glide", cat:"Nerve",
     note:"Ulnar nerve mobilization. Slow, fluid motion rather than a hard hold.",
     holdSec:3, restSec:2, reps:10 },
@@ -294,7 +294,7 @@ const EXERCISES = [
     holdSec:5, restSec:2, reps:30 },
   { id:14, name:"Hand outward flex", cat:"Rotation",
     note:"Small resistance band applying outward pressure against the fingers.",
-    holdSec:3, restSec:2, reps:24 },
+    holdSec:5, restSec:3, reps:24 },
   { id:15, name:"Seated weighted lift", cat:"Strengthening",
     note:"Arm rotated through three directions with a weight, one set per direction.",
     holdSec:3, restSec:3,
@@ -551,9 +551,10 @@ function renderDashes(){
   const wrap = document.getElementById("run-dashes");
   if(current.type==="hold"){ wrap.innerHTML=""; return; }
   wrap.innerHTML = "";
-  for(let i=0;i<session.totalReps;i++){
+  const phase = session.phases[session.phaseIdx];
+  for(let i=0;i<phase.reps;i++){
     const d = document.createElement("div");
-    d.className = "dash" + (i < session.totalRepsDone ? " filled" : "");
+    d.className = "dash" + (i < session.repInPhase ? " filled" : "");
     wrap.appendChild(d);
   }
 }
@@ -636,6 +637,7 @@ function advanceState(){
     if(session.repInPhase >= phase.reps){
       session.phaseIdx++;
       session.repInPhase = 0;
+      renderDashes();
     }
     session.mode = "press";
     session.timeLeft = current.holdSec;
@@ -698,7 +700,11 @@ function render(){
   document.getElementById("run-dial").querySelector(".unit").textContent = "sec";
 
   const label = currentPhaseLabel();
-  phaseLabel.textContent = label ? `Direction: ${label}` : "";
+  const phaseIdx = session.phaseIdx;
+  const phaseCount = session.phases.length;
+  phaseLabel.textContent = label
+    ? (phaseCount > 1 ? `Direction ${phaseIdx+1} of ${phaseCount}: ${label}` : `Direction: ${label}`)
+    : "";
 
   if(session.mode === "press"){
     dial.classList.add("mode-press");
@@ -709,7 +715,9 @@ function render(){
     stateWord.textContent = session.isPhaseGapRest ? "Switching direction" : "Release & rest";
     stateWord.className = "state-word rest";
   }
-  repCounter.innerHTML = `Rep <span>${Math.min(session.totalRepsDone+1, session.totalReps)}</span> of <span>${session.totalReps}</span>`;
+  const phaseNow = session.phases[session.phaseIdx];
+  const repShown = Math.min(session.repInPhase+1, phaseNow.reps);
+  repCounter.innerHTML = `Rep <span>${repShown}</span> of <span>${phaseNow.reps}</span>`;
 }
 
 // ---- Sound cues ----
