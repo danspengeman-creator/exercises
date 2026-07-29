@@ -303,6 +303,25 @@ const EXERCISES = [
     ]},
 ];
 
+// ---- Screen wake lock ----
+let wakeLock = null;
+async function requestWakeLock(){
+  try{
+    if("wakeLock" in navigator){
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", ()=>{ wakeLock = null; });
+    }
+  }catch(e){ /* wake lock unavailable or denied, exercise still works fine */ }
+}
+function releaseWakeLock(){
+  if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; }
+}
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible" && document.getElementById("screen-run").classList.contains("active")){
+    requestWakeLock();
+  }
+});
+
 let current = null;   // exercise config with live field values
 let session = null;   // runtime state
 let soundOn = true;
@@ -369,6 +388,7 @@ function showScreen(id){
 }
 function goToList(){
   stopLoop();
+  releaseWakeLock();
   showScreen("screen-list");
 }
 
@@ -457,6 +477,7 @@ function buildPhaseQueue(ex){
 function startExercise(){
   readSetupFields();
   showScreen("screen-run");
+  requestWakeLock();
   document.getElementById("run-name").textContent = current.name;
   runPreCountdown(3, ()=>{ beginSession(); });
 }
