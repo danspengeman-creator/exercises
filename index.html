@@ -17,6 +17,7 @@
     --press:#ef8354;
     --rest:#4fd1c5;
     --done:#7fd88f;
+    --switch:#c58cff;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
@@ -114,15 +115,35 @@
   .run .phase-label{color:var(--sub);font-size:15px;margin-bottom:16px;letter-spacing:.06em;text-transform:uppercase;}
 
   .dial{
-    width:min(280px,72vw);height:min(280px,72vw);border-radius:50%;
+    width:min(320px,78vw);height:min(320px,78vw);border-radius:50%;
     margin:0 auto 20px;display:flex;align-items:center;justify-content:center;
     border:6px solid var(--line);position:relative;transition:border-color .2s;
   }
   .dial.mode-press{border-color:var(--press);}
   .dial.mode-rest{border-color:var(--rest);}
   .dial.mode-done{border-color:var(--done);}
-  .dial .num{font-family:'Fraunces',serif;font-size:min(96px,23vw);font-weight:600;line-height:1;}
-  .dial .unit{position:absolute;bottom:26%;font-size:13px;color:var(--sub);letter-spacing:.1em;text-transform:uppercase;}
+  .dial .num{font-family:'Fraunces',serif;font-size:min(120px,26vw);font-weight:600;line-height:1;}
+  .dial .unit{position:absolute;bottom:24%;font-size:13px;color:var(--sub);letter-spacing:.1em;text-transform:uppercase;}
+
+  .switch{ /* namespace anchor, unused */ }
+  .switch-banner{
+    width:100%;
+    background:linear-gradient(135deg, #3a2a55, #241b38);
+    border:2px solid var(--switch);
+    border-radius:18px;
+    padding:28px 20px;
+    margin:0 auto 20px;
+    text-align:center;
+    animation:switchPulse 0.7s ease-in-out infinite;
+  }
+  @keyframes switchPulse{
+    0%{box-shadow:0 0 0 0 rgba(197,140,255,0.35);}
+    50%{box-shadow:0 0 0 10px rgba(197,140,255,0);}
+    100%{box-shadow:0 0 0 0 rgba(197,140,255,0);}
+  }
+  .switch-title{font-family:'Fraunces',serif;font-size:26px;color:var(--switch);letter-spacing:.02em;margin-bottom:8px;}
+  .switch-next{font-size:20px;color:var(--text);margin-bottom:14px;}
+  .switch-count{font-family:'Fraunces',serif;font-size:56px;color:var(--switch);line-height:1;}
 
   .state-word{font-size:17px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;}
   .state-word.press{color:var(--press);}
@@ -225,6 +246,11 @@
           <div class="confetti" id="confetti"></div>
           <div class="num" id="run-num">0</div>
           <div class="unit">sec</div>
+        </div>
+        <div class="switch-banner" id="switch-banner" style="display:none;">
+          <div class="switch-title">Switch directions</div>
+          <div class="switch-next" id="switch-next"></div>
+          <div class="switch-count" id="switch-count"></div>
         </div>
         <div class="rep-counter" id="run-rep"></div>
         <div class="dashes" id="run-dashes"></div>
@@ -521,6 +547,8 @@ function runPreCountdown(n, onDone){
 function beginSession(){
   document.getElementById("great-job").style.display = "none";
   document.getElementById("confetti").innerHTML = "";
+  document.getElementById("switch-banner").style.display = "none";
+  document.getElementById("run-dial").style.display = "flex";
   const phases = buildPhaseQueue(current);
   const totalReps = phases.reduce((a,p)=>a+p.reps,0);
   session = {
@@ -630,7 +658,7 @@ function advanceState(){
     const isPhaseBoundary = session.repInPhase >= phaseNow.reps && session.phaseIdx < session.phases.length - 1;
     session.timeLeft = (isPhaseBoundary && current.phaseGapSec) ? current.phaseGapSec : current.restSec;
     session.isPhaseGapRest = isPhaseBoundary && !!current.phaseGapSec;
-    playCue("rest");
+    playCue(session.isPhaseGapRest ? "switchdir" : "rest");
   } else {
     // rest finished, check if phase is done -> move to next phase
     const phase = session.phases[session.phaseIdx];
@@ -706,13 +734,30 @@ function render(){
     ? (phaseCount > 1 ? `Direction ${phaseIdx+1} of ${phaseCount}: ${label}` : `Direction: ${label}`)
     : "";
 
+  const dialEl = document.getElementById("run-dial");
+  const banner = document.getElementById("switch-banner");
+
+  if(session.mode === "rest" && session.isPhaseGapRest){
+    dialEl.style.display = "none";
+    banner.style.display = "block";
+    stateWord.textContent = "";
+    const nextPhase = session.phases[session.phaseIdx + 1];
+    document.getElementById("switch-next").textContent = nextPhase ? `Next: ${nextPhase.label}` : "";
+    document.getElementById("switch-count").textContent = secs;
+    repCounter.textContent = "";
+    document.getElementById("run-dashes").innerHTML = "";
+    return;
+  }
+  dialEl.style.display = "flex";
+  banner.style.display = "none";
+
   if(session.mode === "press"){
     dial.classList.add("mode-press");
     stateWord.textContent = "Press & hold";
     stateWord.className = "state-word press";
   } else {
     dial.classList.add("mode-rest");
-    stateWord.textContent = session.isPhaseGapRest ? "Switching direction" : "Release & rest";
+    stateWord.textContent = "Release & rest";
     stateWord.className = "state-word rest";
   }
   const phaseNow = session.phases[session.phaseIdx];
@@ -757,12 +802,19 @@ function fireConfetti(){
 // start: a two-tone "ding-dong" bell, unique from press/rest/done
 // press: one short blip, like "go"
 // rest: two soft low beeps, like "ease off"
+// switchdir: alternating high-low alarm-like blips, unique from everything else
 // done: a short celebratory ditty
 function playCue(type){
   if(!soundOn) return;
   if(type==="start"){ beep(392, 0.22, 0, "sine"); beep(523, 0.34, 240, "sine"); }
   if(type==="press"){ beep(740, 0.1, 0, "square"); }
   if(type==="rest"){ beep(300, 0.18, 0, "sine"); beep(300, 0.18, 160, "sine"); }
+  if(type==="switchdir"){
+    beep(950, 0.09, 0, "sawtooth");
+    beep(500, 0.09, 130, "sawtooth");
+    beep(950, 0.09, 260, "sawtooth");
+    beep(500, 0.14, 390, "sawtooth");
+  }
   if(type==="done"){
     beep(523, 0.14, 0, "triangle");
     beep(659, 0.14, 130, "triangle");
