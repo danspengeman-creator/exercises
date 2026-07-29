@@ -21,24 +21,19 @@
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
   body{
-    background-image:
-      linear-gradient(var(--line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--line) 1px, transparent 1px);
-    background-size:40px 40px;
-    background-position:-1px -1px;
     padding-bottom:env(safe-area-inset-bottom, 0px);
     overscroll-behavior-y:contain;
   }
   h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;}
   .wrap{max-width:880px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 60px;}
   header{margin-bottom:28px;}
-  header .eyebrow{color:var(--sub);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
-  header h1{font-size:34px;line-height:1.1;}
-  header .meta{color:var(--sub);font-size:12px;margin-top:8px;}
+  header .eyebrow{color:var(--sub);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
+  header h1{font-size:40px;line-height:1.1;}
+  header .meta{color:var(--sub);font-size:14px;margin-top:8px;}
   .reset-all-btn{
     margin-top:16px;padding:10px 16px;border-radius:8px;border:1px solid var(--line);
-    background:none;color:var(--sub);font-family:'DM Mono',monospace;font-size:12px;
-    cursor:pointer;min-height:40px;touch-action:manipulation;
+    background:none;color:var(--sub);font-family:'DM Mono',monospace;font-size:14px;
+    cursor:pointer;min-height:44px;touch-action:manipulation;
   }
   .reset-all-btn:hover{color:var(--text);border-color:#3a4048;}
 
@@ -61,62 +56,62 @@
   .card .check-badge{
     display:none;position:absolute;top:12px;right:12px;
     width:22px;height:22px;border-radius:50%;background:var(--done);
-    color:#0b2011;font-size:13px;font-weight:700;align-items:center;justify-content:center;
+    color:#0b2011;font-size:14px;font-weight:700;align-items:center;justify-content:center;
   }
   .card.completed .check-badge{display:flex;}
   .card:hover{background:var(--card-hover);border-color:#3a4048;transform:translateY(-1px);}
-  .card .idx{color:var(--sub);font-size:11px;letter-spacing:.1em;}
-  .card h3{font-size:19px;margin-top:4px;line-height:1.2;}
-  .card .cat{display:inline-block;margin-top:8px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--sub);padding:2px 7px;border-radius:20px;}
-  .card .spec{color:var(--sub);font-size:12px;margin-top:10px;line-height:1.5;}
+  .card .idx{color:var(--sub);font-size:12px;letter-spacing:.1em;}
+  .card h3{font-size:22px;margin-top:4px;line-height:1.2;}
+  .card .cat{display:inline-block;margin-top:8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--sub);padding:2px 7px;border-radius:20px;}
+  .card .spec{color:var(--sub);font-size:14px;margin-top:10px;line-height:1.5;}
 
   /* Setup / run screen */
   .screen{display:none;}
   .screen.active{display:block;}
   .back{
     background:var(--card);border:1px solid var(--line);color:var(--text);
-    font-family:'DM Mono',monospace;font-size:14px;cursor:pointer;
+    font-family:'DM Mono',monospace;font-size:16px;cursor:pointer;
     padding:12px 18px;margin-bottom:14px;min-height:48px;border-radius:8px;
     touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;
   }
   .back:hover{color:var(--text);border-color:var(--press);background:var(--card-hover);}
 
   .setup-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 18px;}
-  .setup-card h2{font-size:24px;margin-bottom:4px;}
-  .setup-card .cat{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--sub);padding:2px 7px;border-radius:20px;}
-  .setup-card .note{color:var(--sub);font-size:13px;margin-top:14px;line-height:1.6;}
+  .setup-card h2{font-size:28px;margin-bottom:4px;}
+  .setup-card .cat{display:inline-block;margin-top:6px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--sub);padding:2px 7px;border-radius:20px;}
+  .setup-card .note{color:var(--sub);font-size:15px;margin-top:14px;line-height:1.6;}
 
   .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-top:20px;}
-  .field label{display:block;color:var(--sub);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+  .field label{display:block;color:var(--sub);font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
   .field input{
     width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);
-    font-family:'DM Mono',monospace;font-size:16px;padding:12px;border-radius:8px;
+    font-family:'DM Mono',monospace;font-size:18px;padding:12px;border-radius:8px;
     min-height:44px;
   }
   .field input:focus{outline:none;border-color:var(--press);}
 
-  .phase-list{margin-top:16px;font-size:13px;color:var(--sub);}
+  .phase-list{margin-top:16px;font-size:15px;color:var(--sub);}
   .phase-list div{padding:4px 0;border-bottom:1px dashed var(--line);}
 
   .primary-btn{
     margin-top:24px;width:100%;padding:16px;border-radius:10px;border:none;
     background:var(--press);color:#1a0d05;font-family:'DM Mono',monospace;font-weight:500;
-    font-size:16px;letter-spacing:.04em;cursor:pointer;min-height:52px;touch-action:manipulation;
+    font-size:18px;letter-spacing:.04em;cursor:pointer;min-height:52px;touch-action:manipulation;
   }
   .primary-btn:hover{filter:brightness(1.08);}
 
   .mark-btn{
     margin-top:10px;width:100%;padding:14px;border-radius:10px;
     background:none;border:1px solid var(--line);color:var(--sub);
-    font-family:'DM Mono',monospace;font-size:14px;cursor:pointer;min-height:48px;
+    font-family:'DM Mono',monospace;font-size:16px;cursor:pointer;min-height:48px;
     touch-action:manipulation;
   }
   .mark-btn.is-complete{border-color:var(--done);color:var(--done);}
 
   /* Run screen */
   .run{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 18px;text-align:center;}
-  .run h2{font-size:20px;margin-bottom:2px;}
-  .run .phase-label{color:var(--sub);font-size:13px;margin-bottom:16px;letter-spacing:.06em;text-transform:uppercase;}
+  .run h2{font-size:24px;margin-bottom:2px;}
+  .run .phase-label{color:var(--sub);font-size:15px;margin-bottom:16px;letter-spacing:.06em;text-transform:uppercase;}
 
   .dial{
     width:min(280px,72vw);height:min(280px,72vw);border-radius:50%;
@@ -126,15 +121,15 @@
   .dial.mode-press{border-color:var(--press);}
   .dial.mode-rest{border-color:var(--rest);}
   .dial.mode-done{border-color:var(--done);}
-  .dial .num{font-family:'Fraunces',serif;font-size:min(84px,21vw);font-weight:600;line-height:1;}
-  .dial .unit{position:absolute;bottom:26%;font-size:12px;color:var(--sub);letter-spacing:.1em;text-transform:uppercase;}
+  .dial .num{font-family:'Fraunces',serif;font-size:min(96px,23vw);font-weight:600;line-height:1;}
+  .dial .unit{position:absolute;bottom:26%;font-size:13px;color:var(--sub);letter-spacing:.1em;text-transform:uppercase;}
 
-  .state-word{font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;}
+  .state-word{font-size:17px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;}
   .state-word.press{color:var(--press);}
   .state-word.rest{color:var(--rest);}
   .state-word.done{color:var(--done);}
 
-  .rep-counter{font-size:16px;color:var(--text);margin-bottom:18px;}
+  .rep-counter{font-size:18px;color:var(--text);margin-bottom:18px;}
   .rep-counter span{color:var(--sub);}
 
   .dashes{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-width:520px;margin:0 auto 22px;}
@@ -145,14 +140,14 @@
   .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;touch-action:manipulation;}
   .ctrl-btn{
     padding:14px 22px;border-radius:8px;border:1px solid var(--line);background:var(--bg);
-    color:var(--text);font-family:'DM Mono',monospace;font-size:15px;cursor:pointer;
+    color:var(--text);font-family:'DM Mono',monospace;font-size:17px;cursor:pointer;
     min-height:48px;flex:1 1 130px;max-width:220px;touch-action:manipulation;
   }
   .ctrl-btn:hover{border-color:#3a4048;}
   .ctrl-btn.primary{background:var(--press);color:#1a0d05;border-color:var(--press);}
   .ctrl-btn.primary:hover{filter:brightness(1.08);}
 
-  .sound-toggle{position:absolute;top:20px;right:20px;color:var(--sub);font-size:12px;cursor:pointer;user-select:none;}
+  .sound-toggle{position:absolute;top:20px;right:20px;color:var(--sub);font-size:13px;cursor:pointer;user-select:none;}
   .run-wrap{position:relative;}
 
   .celebrate-wrap{position:relative;}
@@ -173,14 +168,14 @@
     0%{transform:translateY(-10px) rotate(0deg);opacity:1;}
     100%{transform:translateY(240px) rotate(300deg);opacity:0;}
   }
-  .great-job{font-family:'Fraunces',serif;font-size:26px;color:var(--done);margin-bottom:2px;opacity:0;animation:pop .5s ease-out forwards;}
+  .great-job{font-family:'Fraunces',serif;font-size:30px;color:var(--done);margin-bottom:2px;opacity:0;animation:pop .5s ease-out forwards;}
   @keyframes pop{
     0%{opacity:0;transform:scale(.85);}
     60%{opacity:1;transform:scale(1.06);}
     100%{opacity:1;transform:scale(1);}
   }
   @media (max-width:520px){
-    header h1{font-size:26px;}
+    header h1{font-size:30px;}
     .wrap{padding-left:14px;padding-right:14px;}
   }
   @media (max-width:360px){
@@ -407,8 +402,8 @@ function openSetup(id){
 
   if(ex.type==="hold"){
     fields.innerHTML = `
-      <div class="field"><label>Hold (seconds)</label>
-        <input type="number" inputmode="numeric" pattern="[0-9]*" min="5" id="f-hold" value="${ex.holdSec}"></div>`;
+      <div class="field"><label>Hold (minutes)</label>
+        <input type="number" inputmode="decimal" min="1" step="0.5" id="f-hold-min" value="${(ex.holdSec/60)}"></div>`;
   } else if(ex.phases){
     fields.innerHTML = `
       <div class="field"><label>Hold (seconds)</label>
@@ -450,7 +445,8 @@ function toggleMarkComplete(){
 
 function readSetupFields(){
   if(current.type==="hold"){
-    current.holdSec = parseInt(document.getElementById("f-hold").value)||current.holdSec;
+    const mins = parseFloat(document.getElementById("f-hold-min").value);
+    current.holdSec = mins ? Math.round(mins*60) : current.holdSec;
   } else if(current.phases){
     const hold = parseInt(document.getElementById("f-hold").value)||current.holdSec;
     const rest = parseInt(document.getElementById("f-rest").value)||current.restSec;
@@ -642,6 +638,13 @@ function advanceState(){
   rafId = requestAnimationFrame(tick);
 }
 
+function formatTime(totalSeconds){
+  const s = Math.max(0, Math.ceil(totalSeconds));
+  const m = Math.floor(s/60);
+  const rem = s%60;
+  return m + ":" + String(rem).padStart(2,"0");
+}
+
 function render(){
   const dial = document.getElementById("run-dial");
   const num = document.getElementById("run-num");
@@ -674,7 +677,7 @@ function render(){
   document.getElementById("btn-toggle").style.display = "inline-block";
 
   const secs = Math.max(0, Math.ceil(session.timeLeft));
-  num.textContent = secs;
+  num.textContent = current.type==="hold" ? formatTime(session.timeLeft) : secs;
 
   if(current.type==="hold"){
     dial.classList.add("mode-press");
@@ -682,8 +685,10 @@ function render(){
     stateWord.className = "state-word press";
     phaseLabel.textContent = "Single sustained hold";
     repCounter.textContent = "";
+    document.getElementById("run-dial").querySelector(".unit").textContent = "min:sec";
     return;
   }
+  document.getElementById("run-dial").querySelector(".unit").textContent = "sec";
 
   const label = currentPhaseLabel();
   phaseLabel.textContent = label ? `Direction: ${label}` : "";
