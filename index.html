@@ -110,7 +110,7 @@
 
   /* Run screen */
   .run{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 18px;text-align:center;}
-  .run h2{font-size:24px;margin-bottom:2px;}
+  .run h2{font-size:24px;margin-bottom:2px;padding-right:76px;}
   .run .phase-label{color:var(--sub);font-size:15px;margin-bottom:16px;letter-spacing:.06em;text-transform:uppercase;}
 
   .dial{
@@ -147,7 +147,8 @@
   .ctrl-btn.primary{background:var(--press);color:#1a0d05;border-color:var(--press);}
   .ctrl-btn.primary:hover{filter:brightness(1.08);}
 
-  .sound-toggle{position:absolute;top:20px;right:20px;color:var(--sub);font-size:13px;cursor:pointer;user-select:none;}
+  .sound-toggle{color:var(--sub);font-size:13px;cursor:pointer;user-select:none;padding:8px 4px;}
+  .run-toolbar{display:flex;justify-content:flex-end;margin-bottom:14px;}
   .run-wrap{position:relative;}
 
   .celebrate-wrap{position:relative;}
@@ -212,7 +213,9 @@
   <div id="screen-run" class="screen">
     <button class="back" onclick="goToList()">&larr; All exercises</button>
     <div class="run-wrap">
-      <div class="sound-toggle" id="sound-toggle" onclick="toggleSound()">sound: on</div>
+      <div class="run-toolbar">
+        <div class="sound-toggle" id="sound-toggle" onclick="toggleSound()">sound: on</div>
+      </div>
       <div class="run">
         <h2 id="run-name"></h2>
         <div class="phase-label" id="run-phase-label"></div>
@@ -256,7 +259,7 @@ const EXERCISES = [
     holdSec:15, restSec:15, reps:25 },
   { id:7, name:"Four-direction hand blocking", cat:"Rotation",
     note:"Wrist circumduction with isometric blocking, one set per direction. A longer rest kicks in when switching direction.",
-    holdSec:3, restSec:2, phaseGapSec:5,
+    holdSec:5, restSec:2, phaseGapSec:5,
     phases:[
       { label:"Rotating inward", reps:30 },
       { label:"Rotating outward", reps:30 },
@@ -271,14 +274,18 @@ const EXERCISES = [
       { label:"Step right", reps:24 },
     ]},
   { id:9, name:"Sword pull diagonal lift", cat:"Functional",
-    note:"Diagonal PNF pattern, pulling toward the body. Longer rest between reps to reset the pattern.",
-    holdSec:3, restSec:10, reps:24 },
+    note:"Diagonal PNF pattern, one set per direction. A longer rest kicks in when switching direction.",
+    holdSec:3, restSec:2, phaseGapSec:5,
+    phases:[
+      { label:"Diagonal up and out", reps:24 },
+      { label:"Diagonal down and in", reps:24 },
+    ]},
   { id:10, name:"Side-lying external rotation", cat:"Strengthening",
     note:"Sidelying shoulder external rotation with weight. Continuous motion, about 3 seconds up and 3 seconds down, no rest between reps.",
     holdSec:3, restSec:0, reps:30 },
   { id:11, name:"45-degree shoulder lift", cat:"Strengthening",
-    note:"Scaption, shoulder elevation in the scapular plane, 3 lb weight.",
-    holdSec:3, restSec:2, reps:24 },
+    note:"Scaption, shoulder elevation in the scapular plane to eye level, 3 lb weight.",
+    holdSec:5, restSec:2, reps:24 },
   { id:12, name:"Ulnar nerve glide", cat:"Nerve",
     note:"Ulnar nerve mobilization. Slow, fluid motion rather than a hard hold.",
     holdSec:3, restSec:2, reps:10 },
@@ -286,11 +293,11 @@ const EXERCISES = [
     note:"Squeeze a rolled towel in the fist.",
     holdSec:5, restSec:2, reps:30 },
   { id:14, name:"Hand outward flex", cat:"Rotation",
-    note:"Small resistance band applying outward pressure against the hand.",
+    note:"Small resistance band applying outward pressure against the fingers.",
     holdSec:3, restSec:2, reps:24 },
   { id:15, name:"Seated weighted lift", cat:"Strengthening",
     note:"Arm rotated through three directions with a weight, one set per direction.",
-    holdSec:3, restSec:2,
+    holdSec:3, restSec:3,
     phases:[
       { label:"Upward", reps:24 },
       { label:"Sideways", reps:24 },
@@ -739,12 +746,13 @@ function fireConfetti(){
   setTimeout(()=>{ wrap.innerHTML = ""; }, 2200);
 }
 
+// start: a two-tone "ding-dong" bell, unique from press/rest/done
 // press: one short blip, like "go"
 // rest: two soft low beeps, like "ease off"
 // done: a short celebratory ditty
 function playCue(type){
   if(!soundOn) return;
-  if(type==="start"){ beep(440, 0.14, 0, "triangle"); beep(440, 0.14, 180, "triangle"); beep(440, 0.22, 360, "triangle"); }
+  if(type==="start"){ beep(392, 0.22, 0, "sine"); beep(523, 0.34, 240, "sine"); }
   if(type==="press"){ beep(740, 0.1, 0, "square"); }
   if(type==="rest"){ beep(300, 0.18, 0, "sine"); beep(300, 0.18, 160, "sine"); }
   if(type==="done"){
