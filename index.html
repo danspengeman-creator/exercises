@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Elbow PT Timer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d10;
+    --card:#15181d;
+    --card-hover:#1b1f26;
+    --line:#262a31;
+    --text:#eef1f3;
+    --sub:#8b939b;
+    --press:#ef8354;
+    --rest:#4fd1c5;
+    --done:#7fd88f;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:'DM Mono',monospace;min-height:100vh;}
+  body{
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:40px 40px;
+    background-position:-1px -1px;
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+    overscroll-behavior-y:contain;
+  }
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;}
+  .wrap{max-width:880px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 16px 60px;}
+  header{margin-bottom:28px;}
+  header .eyebrow{color:var(--sub);font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
+  header h1{font-size:34px;line-height:1.1;}
+  header .meta{color:var(--sub);font-size:12px;margin-top:8px;}
+  .reset-all-btn{
+    margin-top:16px;padding:10px 16px;border-radius:8px;border:1px solid var(--line);
+    background:none;color:var(--sub);font-family:'DM Mono',monospace;font-size:12px;
+    cursor:pointer;min-height:40px;touch-action:manipulation;
+  }
+  .reset-all-btn:hover{color:var(--text);border-color:#3a4048;}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+    cursor:pointer;
+    touch-action:manipulation;
+    transition:border-color .15s, background .15s, transform .15s;
+    text-align:left;
+    position:relative;
+  }
+  .card.completed{
+    background:rgba(127,216,143,0.08);
+    border-color:var(--done);
+  }
+  .card .check-badge{
+    display:none;position:absolute;top:12px;right:12px;
+    width:22px;height:22px;border-radius:50%;background:var(--done);
+    color:#0b2011;font-size:13px;font-weight:700;align-items:center;justify-content:center;
+  }
+  .card.completed .check-badge{display:flex;}
+  .card:hover{background:var(--card-hover);border-color:#3a4048;transform:translateY(-1px);}
+  .card .idx{color:var(--sub);font-size:11px;letter-spacing:.1em;}
+  .card h3{font-size:19px;margin-top:4px;line-height:1.2;}
+  .card .cat{display:inline-block;margin-top:8px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--sub);padding:2px 7px;border-radius:20px;}
+  .card .spec{color:var(--sub);font-size:12px;margin-top:10px;line-height:1.5;}
+
+  /* Setup / run screen */
+  .screen{display:none;}
+  .screen.active{display:block;}
+  .back{
+    background:var(--card);border:1px solid var(--line);color:var(--text);
+    font-family:'DM Mono',monospace;font-size:14px;cursor:pointer;
+    padding:12px 18px;margin-bottom:14px;min-height:48px;border-radius:8px;
+    touch-action:manipulation;display:inline-flex;align-items:center;gap:6px;
+  }
+  .back:hover{color:var(--text);border-color:var(--press);background:var(--card-hover);}
+
+  .setup-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px 18px;}
+  .setup-card h2{font-size:24px;margin-bottom:4px;}
+  .setup-card .cat{display:inline-block;margin-top:6px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--sub);padding:2px 7px;border-radius:20px;}
+  .setup-card .note{color:var(--sub);font-size:13px;margin-top:14px;line-height:1.6;}
+
+  .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:14px;margin-top:20px;}
+  .field label{display:block;color:var(--sub);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+  .field input{
+    width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);
+    font-family:'DM Mono',monospace;font-size:16px;padding:12px;border-radius:8px;
+    min-height:44px;
+  }
+  .field input:focus{outline:none;border-color:var(--press);}
+
+  .phase-list{margin-top:16px;font-size:13px;color:var(--sub);}
+  .phase-list div{padding:4px 0;border-bottom:1px dashed var(--line);}
+
+  .primary-btn{
+    margin-top:24px;width:100%;padding:16px;border-radius:10px;border:none;
+    background:var(--press);color:#1a0d05;font-family:'DM Mono',monospace;font-weight:500;
+    font-size:16px;letter-spacing:.04em;cursor:pointer;min-height:52px;touch-action:manipulation;
+  }
+  .primary-btn:hover{filter:brightness(1.08);}
+
+  .mark-btn{
+    margin-top:10px;width:100%;padding:14px;border-radius:10px;
+    background:none;border:1px solid var(--line);color:var(--sub);
+    font-family:'DM Mono',monospace;font-size:14px;cursor:pointer;min-height:48px;
+    touch-action:manipulation;
+  }
+  .mark-btn.is-complete{border-color:var(--done);color:var(--done);}
+
+  /* Run screen */
+  .run{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 18px;text-align:center;}
+  .run h2{font-size:20px;margin-bottom:2px;}
+  .run .phase-label{color:var(--sub);font-size:13px;margin-bottom:16px;letter-spacing:.06em;text-transform:uppercase;}
+
+  .dial{
+    width:min(280px,72vw);height:min(280px,72vw);border-radius:50%;
+    margin:0 auto 20px;display:flex;align-items:center;justify-content:center;
+    border:6px solid var(--line);position:relative;transition:border-color .2s;
+  }
+  .dial.mode-press{border-color:var(--press);}
+  .dial.mode-rest{border-color:var(--rest);}
+  .dial.mode-done{border-color:var(--done);}
+  .dial .num{font-family:'Fraunces',serif;font-size:min(84px,21vw);font-weight:600;line-height:1;}
+  .dial .unit{position:absolute;bottom:26%;font-size:12px;color:var(--sub);letter-spacing:.1em;text-transform:uppercase;}
+
+  .state-word{font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px;}
+  .state-word.press{color:var(--press);}
+  .state-word.rest{color:var(--rest);}
+  .state-word.done{color:var(--done);}
+
+  .rep-counter{font-size:16px;color:var(--text);margin-bottom:18px;}
+  .rep-counter span{color:var(--sub);}
+
+  .dashes{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;max-width:520px;margin:0 auto 22px;}
+  .dash{width:9px;height:16px;border-radius:2px;background:var(--line);}
+  .dash.filled{background:var(--press);}
+  .dash.filled.rest-marker{background:var(--rest);}
+
+  .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;touch-action:manipulation;}
+  .ctrl-btn{
+    padding:14px 22px;border-radius:8px;border:1px solid var(--line);background:var(--bg);
+    color:var(--text);font-family:'DM Mono',monospace;font-size:15px;cursor:pointer;
+    min-height:48px;flex:1 1 130px;max-width:220px;touch-action:manipulation;
+  }
+  .ctrl-btn:hover{border-color:#3a4048;}
+  .ctrl-btn.primary{background:var(--press);color:#1a0d05;border-color:var(--press);}
+  .ctrl-btn.primary:hover{filter:brightness(1.08);}
+
+  .sound-toggle{position:absolute;top:20px;right:20px;color:var(--sub);font-size:12px;cursor:pointer;user-select:none;}
+  .run-wrap{position:relative;}
+
+  .celebrate-wrap{position:relative;}
+  .dial.mode-done{animation:pulse 0.9s ease-in-out infinite;}
+  @keyframes pulse{
+    0%{transform:scale(1);}
+    50%{transform:scale(1.045);}
+    100%{transform:scale(1);}
+  }
+  .confetti{
+    position:absolute;top:-10px;left:0;right:0;height:0;pointer-events:none;
+  }
+  .confetti span{
+    position:absolute;top:0;font-size:18px;opacity:0;
+    animation:fall 1.6s ease-in forwards;
+  }
+  @keyframes fall{
+    0%{transform:translateY(-10px) rotate(0deg);opacity:1;}
+    100%{transform:translateY(240px) rotate(300deg);opacity:0;}
+  }
+  .great-job{font-family:'Fraunces',serif;font-size:26px;color:var(--done);margin-bottom:2px;opacity:0;animation:pop .5s ease-out forwards;}
+  @keyframes pop{
+    0%{opacity:0;transform:scale(.85);}
+    60%{opacity:1;transform:scale(1.06);}
+    100%{opacity:1;transform:scale(1);}
+  }
+  @media (max-width:520px){
+    header h1{font-size:26px;}
+    .wrap{padding-left:14px;padding-right:14px;}
+  }
+  @media (max-width:360px){
+    .run{padding:22px 12px;}
+    .ctrl-btn{flex:1 1 100%;max-width:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="screen-list" class="screen active">
+    <header>
+      <h1>Elbow PT Timer</h1>
+      <div class="meta">Pick an exercise. Adjust reps, hold, and rest if needed. Press start.</div>
+      <button class="reset-all-btn" onclick="resetAllCompleted()">Reset today's checkmarks</button>
+    </header>
+    <div class="grid" id="exercise-grid"></div>
+  </div>
+
+  <div id="screen-setup" class="screen">
+    <button class="back" onclick="goToList()">&larr; All exercises</button>
+    <div class="setup-card">
+      <div id="setup-cat" class="cat"></div>
+      <h2 id="setup-name"></h2>
+      <div id="setup-note" class="note"></div>
+      <div id="setup-fields" class="fields"></div>
+      <div id="setup-phaselist" class="phase-list"></div>
+      <button class="primary-btn" onclick="startExercise()">Start</button>
+      <button class="mark-btn" id="setup-mark-btn" onclick="toggleMarkComplete()">Mark as completed</button>
+    </div>
+  </div>
+
+  <div id="screen-run" class="screen">
+    <button class="back" onclick="goToList()">&larr; All exercises</button>
+    <div class="run-wrap">
+      <div class="sound-toggle" id="sound-toggle" onclick="toggleSound()">sound: on</div>
+      <div class="run">
+        <h2 id="run-name"></h2>
+        <div class="phase-label" id="run-phase-label"></div>
+        <div class="great-job" id="great-job" style="display:none;">Nice work!</div>
+        <div class="state-word" id="run-state"></div>
+        <div class="dial" id="run-dial">
+          <div class="confetti" id="confetti"></div>
+          <div class="num" id="run-num">0</div>
+          <div class="unit">sec</div>
+        </div>
+        <div class="rep-counter" id="run-rep"></div>
+        <div class="dashes" id="run-dashes"></div>
+        <div class="controls">
+          <button class="ctrl-btn primary" id="btn-toggle" onclick="togglePause()">Pause</button>
+          <button class="ctrl-btn" onclick="resetExercise()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ---- Exercise data ----
+// type: "reps" (press/rest cycles) or "hold" (single sustained hold, no reps)
+// phases: for multi-direction exercises, an array of {label, reps}; otherwise a single implicit phase
+const EXERCISES = [
+  { id:1, name:"Wall press series", cat:"Strengthening",
+    note:"Isometric wall press through three positions: fist push, forearm push inward, forearm push outward. A longer rest kicks in when switching position.",
+    holdSec:3, restSec:2, phaseGapSec:5,
+    phases:[
+      { label:"Fist push", reps:30 },
+      { label:"Push inward", reps:30 },
+      { label:"Push outward", reps:30 },
+    ]},
+  { id:4, name:"Lying weighted hang", cat:"Extension", type:"hold",
+    note:"Gravity-assisted passive elbow extension stretch. Use a 2 to 5 lb weight. One sustained hold, no reps.",
+    holdSec:360 },
+  { id:5, name:"Seated flexion overpressure", cat:"Flexion",
+    note:"Passive-assisted elbow flexion stretch. Target intensity 5 to 7 out of 10.",
+    holdSec:15, restSec:15, reps:25 },
+  { id:7, name:"Four-direction hand blocking", cat:"Rotation",
+    note:"Wrist circumduction with isometric blocking, one set per direction. A longer rest kicks in when switching direction.",
+    holdSec:3, restSec:2, phaseGapSec:5,
+    phases:[
+      { label:"Rotating inward", reps:30 },
+      { label:"Rotating outward", reps:30 },
+      { label:"Pushing up", reps:30 },
+      { label:"Pushing down", reps:30 },
+    ]},
+  { id:8, name:"Resistance band side step", cat:"Strengthening",
+    note:"Elastic resistance side step, one set stepping left and one set stepping right.",
+    holdSec:3, restSec:2,
+    phases:[
+      { label:"Step left", reps:24 },
+      { label:"Step right", reps:24 },
+    ]},
+  { id:9, name:"Sword pull diagonal lift", cat:"Functional",
+    note:"Diagonal PNF pattern, pulling toward the body. Longer rest between reps to reset the pattern.",
+    holdSec:3, restSec:10, reps:24 },
+  { id:10, name:"Side-lying external rotation", cat:"Strengthening",
+    note:"Sidelying shoulder external rotation with weight. Continuous motion, about 3 seconds up and 3 seconds down, no rest between reps.",
+    holdSec:3, restSec:0, reps:30 },
+  { id:11, name:"45-degree shoulder lift", cat:"Strengthening",
+    note:"Scaption, shoulder elevation in the scapular plane, 3 lb weight.",
+    holdSec:3, restSec:2, reps:24 },
+  { id:12, name:"Ulnar nerve glide", cat:"Nerve",
+    note:"Ulnar nerve mobilization. Slow, fluid motion rather than a hard hold.",
+    holdSec:3, restSec:2, reps:10 },
+  { id:13, name:"Towel squeeze", cat:"Strengthening",
+    note:"Squeeze a rolled towel in the fist.",
+    holdSec:5, restSec:2, reps:30 },
+  { id:14, name:"Hand outward flex", cat:"Rotation",
+    note:"Small resistance band applying outward pressure against the hand.",
+    holdSec:3, restSec:2, reps:24 },
+  { id:15, name:"Seated weighted lift", cat:"Strengthening",
+    note:"Arm rotated through three directions with a weight, one set per direction.",
+    holdSec:3, restSec:2,
+    phases:[
+      { label:"Upward", reps:24 },
+      { label:"Sideways", reps:24 },
+      { label:"Downward", reps:24 },
+    ]},
+];
+
+let current = null;   // exercise config with live field values
+let session = null;   // runtime state
+let soundOn = true;
+let rafId = null;
+
+// ---- Completed tracking ----
+let completedMap = {};
+function loadCompleted(){
+  try{
+    const raw = localStorage.getItem("pt-timer-completed");
+    completedMap = raw ? JSON.parse(raw) : {};
+  }catch(e){ completedMap = {}; }
+}
+function saveCompleted(){
+  try{ localStorage.setItem("pt-timer-completed", JSON.stringify(completedMap)); }
+  catch(e){ /* storage unavailable, state just stays in memory for this session */ }
+}
+function markComplete(id){
+  completedMap[id] = true;
+  saveCompleted();
+  renderList();
+}
+function unmarkComplete(id){
+  delete completedMap[id];
+  saveCompleted();
+  renderList();
+}
+function resetAllCompleted(){
+  if(!confirm("Clear all checkmarks for today?")) return;
+  completedMap = {};
+  saveCompleted();
+  renderList();
+}
+loadCompleted();
+
+// ---- List screen ----
+function specLine(ex){
+  if(ex.type==="hold") return `1 hold &times; ${Math.round(ex.holdSec/60)} min`;
+  if(ex.phases) return `${ex.phases.length} directions &times; ${ex.phases[0].reps} reps, ${ex.holdSec}s hold`;
+  return `${ex.reps} reps, ${ex.holdSec}s hold, ${ex.restSec}s rest`;
+}
+function renderList(){
+  const grid = document.getElementById("exercise-grid");
+  grid.innerHTML = "";
+  EXERCISES.forEach(ex=>{
+    const card = document.createElement("div");
+    card.className = "card" + (completedMap[ex.id] ? " completed" : "");
+    card.onclick = ()=>openSetup(ex.id);
+    card.innerHTML = `
+      <div class="check-badge">&check;</div>
+      <div class="idx">EX ${String(ex.id).padStart(2,"0")}</div>
+      <h3>${ex.name}</h3>
+      <span class="cat">${ex.cat}</span>
+      <div class="spec">${specLine(ex)}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+renderList();
+
+function showScreen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+function goToList(){
+  stopLoop();
+  showScreen("screen-list");
+}
+
+// ---- Setup screen ----
+function openSetup(id){
+  const ex = EXERCISES.find(e=>e.id===id);
+  current = JSON.parse(JSON.stringify(ex)); // working copy
+  document.getElementById("setup-cat").textContent = ex.cat;
+  document.getElementById("setup-name").textContent = ex.name;
+  document.getElementById("setup-note").textContent = ex.note;
+
+  const fields = document.getElementById("setup-fields");
+  const phaselist = document.getElementById("setup-phaselist");
+  fields.innerHTML = "";
+  phaselist.innerHTML = "";
+
+  if(ex.type==="hold"){
+    fields.innerHTML = `
+      <div class="field"><label>Hold (seconds)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="5" id="f-hold" value="${ex.holdSec}"></div>`;
+  } else if(ex.phases){
+    fields.innerHTML = `
+      <div class="field"><label>Hold (seconds)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-hold" value="${ex.holdSec}"></div>
+      <div class="field"><label>Rest between reps (s)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-rest" value="${ex.restSec}"></div>
+      <div class="field"><label>Reps per direction</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-repsperphase" value="${ex.phases[0].reps}"></div>
+      ${ex.phaseGapSec ? `<div class="field"><label>Rest between directions (s)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-phasegap" value="${ex.phaseGapSec}"></div>` : ""}`;
+    phaselist.innerHTML = ex.phases.map(p=>`<div>${p.label}: ${p.reps} reps</div>`).join("");
+  } else {
+    fields.innerHTML = `
+      <div class="field"><label>Reps</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-reps" value="${ex.reps}"></div>
+      <div class="field"><label>Hold (seconds)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-hold" value="${ex.holdSec}"></div>
+      <div class="field"><label>Rest (seconds)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="f-rest" value="${ex.restSec}"></div>`;
+  }
+  updateMarkBtn();
+  showScreen("screen-setup");
+}
+
+function updateMarkBtn(){
+  const btn = document.getElementById("setup-mark-btn");
+  if(!current) return;
+  const isDone = !!completedMap[current.id];
+  btn.textContent = isDone ? "Completed today ✓ (tap to undo)" : "Mark as completed";
+  btn.classList.toggle("is-complete", isDone);
+}
+
+function toggleMarkComplete(){
+  if(!current) return;
+  if(completedMap[current.id]) unmarkComplete(current.id);
+  else markComplete(current.id);
+  updateMarkBtn();
+}
+
+function readSetupFields(){
+  if(current.type==="hold"){
+    current.holdSec = parseInt(document.getElementById("f-hold").value)||current.holdSec;
+  } else if(current.phases){
+    const hold = parseInt(document.getElementById("f-hold").value)||current.holdSec;
+    const rest = parseInt(document.getElementById("f-rest").value)||current.restSec;
+    const rpp = parseInt(document.getElementById("f-repsperphase").value)||current.phases[0].reps;
+    current.holdSec = hold;
+    current.restSec = rest;
+    current.phases = current.phases.map(p=>({label:p.label, reps:rpp}));
+    const gapEl = document.getElementById("f-phasegap");
+    if(gapEl) current.phaseGapSec = parseInt(gapEl.value)||current.phaseGapSec;
+  } else {
+    current.reps = parseInt(document.getElementById("f-reps").value)||current.reps;
+    current.holdSec = parseInt(document.getElementById("f-hold").value)||current.holdSec;
+    current.restSec = parseInt(document.getElementById("f-rest").value)||current.restSec;
+  }
+}
+
+// ---- Run screen / session state machine ----
+function buildPhaseQueue(ex){
+  // returns array of {label, reps}
+  if(ex.phases) return ex.phases;
+  return [{ label:null, reps: ex.reps }];
+}
+
+function startExercise(){
+  readSetupFields();
+  showScreen("screen-run");
+  document.getElementById("run-name").textContent = current.name;
+  runPreCountdown(3, ()=>{ beginSession(); });
+}
+
+function runPreCountdown(n, onDone){
+  const dial = document.getElementById("run-dial");
+  const num = document.getElementById("run-num");
+  const stateWord = document.getElementById("run-state");
+  const phaseLabel = document.getElementById("run-phase-label");
+  const repCounter = document.getElementById("run-rep");
+  document.getElementById("run-dashes").innerHTML = "";
+  document.getElementById("btn-toggle").style.display = "none";
+
+  dial.classList.remove("mode-press","mode-rest","mode-done");
+  dial.classList.add("mode-press");
+  stateWord.textContent = "Get ready";
+  stateWord.className = "state-word press";
+  phaseLabel.textContent = "";
+  repCounter.textContent = "";
+
+  let count = n;
+  num.textContent = count;
+  beep(500, 0.12, 0, "triangle");
+  const iv = setInterval(()=>{
+    count--;
+    if(count > 0){
+      num.textContent = count;
+      beep(500, 0.12, 0, "triangle");
+    } else {
+      clearInterval(iv);
+      num.textContent = "Go";
+      beep(880, 0.2, 0, "square");
+      setTimeout(onDone, 500);
+    }
+  }, 800);
+}
+
+function beginSession(){
+  document.getElementById("great-job").style.display = "none";
+  document.getElementById("confetti").innerHTML = "";
+  const phases = buildPhaseQueue(current);
+  const totalReps = phases.reduce((a,p)=>a+p.reps,0);
+  session = {
+    ex: current,
+    phases,
+    phaseIdx: 0,
+    repInPhase: 0,
+    totalRepsDone: 0,
+    totalReps,
+    mode: current.type==="hold" ? "hold" : "press",
+    timeLeft: current.type==="hold" ? current.holdSec : current.holdSec,
+    paused: false,
+    lastTick: null,
+    finished: false,
+  };
+  document.getElementById("btn-toggle").textContent = "Pause";
+  renderDashes();
+  playCue("start");
+  startLoop();
+}
+
+function resetExercise(){
+  stopLoop();
+  startExercise();
+}
+
+function renderDashes(){
+  const wrap = document.getElementById("run-dashes");
+  if(current.type==="hold"){ wrap.innerHTML=""; return; }
+  wrap.innerHTML = "";
+  for(let i=0;i<session.totalReps;i++){
+    const d = document.createElement("div");
+    d.className = "dash" + (i < session.totalRepsDone ? " filled" : "");
+    wrap.appendChild(d);
+  }
+}
+
+function currentPhaseLabel(){
+  const p = session.phases[session.phaseIdx];
+  return p.label;
+}
+
+function startLoop(){
+  session.lastTick = performance.now();
+  rafId = requestAnimationFrame(tick);
+}
+function stopLoop(){
+  if(rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+}
+
+function togglePause(){
+  if(!session || session.finished) return;
+  session.paused = !session.paused;
+  document.getElementById("btn-toggle").textContent = session.paused ? "Resume" : "Pause";
+  if(!session.paused){
+    session.lastTick = performance.now();
+    rafId = requestAnimationFrame(tick);
+  } else {
+    stopLoop();
+  }
+}
+
+function tick(now){
+  if(!session || session.paused || session.finished) return;
+  const dt = (now - session.lastTick)/1000;
+  session.lastTick = now;
+  session.timeLeft -= dt;
+
+  if(session.timeLeft <= 0){
+    advanceState();
+  } else {
+    render();
+    rafId = requestAnimationFrame(tick);
+  }
+}
+
+function advanceState(){
+  if(current.type==="hold"){
+    session.finished = true;
+    session.mode = "done";
+    render();
+    playCue("done");
+    return;
+  }
+
+  if(session.mode === "press"){
+    // completed a hold, count the rep
+    session.repInPhase++;
+    session.totalRepsDone++;
+    renderDashes();
+
+    const phase = session.phases[session.phaseIdx];
+    const isLastRepOverall = session.totalRepsDone >= session.totalReps;
+
+    if(isLastRepOverall){
+      session.finished = true;
+      session.mode = "done";
+      render();
+      playCue("done");
+      return;
+    }
+    // move to rest
+    session.mode = "rest";
+    const phaseNow = session.phases[session.phaseIdx];
+    const isPhaseBoundary = session.repInPhase >= phaseNow.reps && session.phaseIdx < session.phases.length - 1;
+    session.timeLeft = (isPhaseBoundary && current.phaseGapSec) ? current.phaseGapSec : current.restSec;
+    session.isPhaseGapRest = isPhaseBoundary && !!current.phaseGapSec;
+    playCue("rest");
+  } else {
+    // rest finished, check if phase is done -> move to next phase
+    const phase = session.phases[session.phaseIdx];
+    if(session.repInPhase >= phase.reps){
+      session.phaseIdx++;
+      session.repInPhase = 0;
+    }
+    session.mode = "press";
+    session.timeLeft = current.holdSec;
+    playCue("press");
+  }
+  render();
+  rafId = requestAnimationFrame(tick);
+}
+
+function render(){
+  const dial = document.getElementById("run-dial");
+  const num = document.getElementById("run-num");
+  const stateWord = document.getElementById("run-state");
+  const phaseLabel = document.getElementById("run-phase-label");
+  const repCounter = document.getElementById("run-rep");
+
+  dial.classList.remove("mode-press","mode-rest","mode-done");
+
+  if(session.finished){
+    dial.classList.add("mode-done");
+    num.textContent = "Done";
+    stateWord.textContent = "Complete";
+    stateWord.className = "state-word done";
+    phaseLabel.textContent = current.name;
+    if(current.type==="hold"){
+      repCounter.textContent = "";
+    } else {
+      repCounter.innerHTML = `<span>${session.totalRepsDone} / ${session.totalReps} reps</span>`;
+    }
+    document.getElementById("btn-toggle").style.display = "none";
+    if(!session.celebrated){
+      session.celebrated = true;
+      document.getElementById("great-job").style.display = "block";
+      fireConfetti();
+      markComplete(current.id);
+    }
+    return;
+  }
+  document.getElementById("btn-toggle").style.display = "inline-block";
+
+  const secs = Math.max(0, Math.ceil(session.timeLeft));
+  num.textContent = secs;
+
+  if(current.type==="hold"){
+    dial.classList.add("mode-press");
+    stateWord.textContent = "Hold";
+    stateWord.className = "state-word press";
+    phaseLabel.textContent = "Single sustained hold";
+    repCounter.textContent = "";
+    return;
+  }
+
+  const label = currentPhaseLabel();
+  phaseLabel.textContent = label ? `Direction: ${label}` : "";
+
+  if(session.mode === "press"){
+    dial.classList.add("mode-press");
+    stateWord.textContent = "Press & hold";
+    stateWord.className = "state-word press";
+  } else {
+    dial.classList.add("mode-rest");
+    stateWord.textContent = session.isPhaseGapRest ? "Switching direction" : "Release & rest";
+    stateWord.className = "state-word rest";
+  }
+  repCounter.innerHTML = `Rep <span>${Math.min(session.totalRepsDone+1, session.totalReps)}</span> of <span>${session.totalReps}</span>`;
+}
+
+// ---- Sound cues ----
+let audioCtx = null;
+function beep(freq, dur, delay, type){
+  setTimeout(()=>{
+    try{
+      if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.type = type || "sine";
+      o.frequency.value = freq;
+      g.gain.value = 0.09;
+      o.start();
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      o.stop(audioCtx.currentTime + dur + 0.02);
+    }catch(e){/* audio not available, ignore */}
+  }, delay);
+}
+function fireConfetti(){
+  const wrap = document.getElementById("confetti");
+  const bits = ["✦","●","▲","■","✦","●"];
+  const colors = ["#ef8354","#4fd1c5","#7fd88f","#eef1f3"];
+  for(let i=0;i<18;i++){
+    const s = document.createElement("span");
+    s.textContent = bits[i % bits.length];
+    s.style.left = (Math.random()*100) + "%";
+    s.style.color = colors[i % colors.length];
+    s.style.animationDelay = (Math.random()*0.4) + "s";
+    s.style.fontSize = (12 + Math.random()*10) + "px";
+    wrap.appendChild(s);
+  }
+  setTimeout(()=>{ wrap.innerHTML = ""; }, 2200);
+}
+
+// press: one short blip, like "go"
+// rest: two soft low beeps, like "ease off"
+// done: a short celebratory ditty
+function playCue(type){
+  if(!soundOn) return;
+  if(type==="start"){ beep(440, 0.14, 0, "triangle"); beep(440, 0.14, 180, "triangle"); beep(440, 0.22, 360, "triangle"); }
+  if(type==="press"){ beep(740, 0.1, 0, "square"); }
+  if(type==="rest"){ beep(300, 0.18, 0, "sine"); beep(300, 0.18, 160, "sine"); }
+  if(type==="done"){
+    beep(523, 0.14, 0, "triangle");
+    beep(659, 0.14, 130, "triangle");
+    beep(784, 0.14, 260, "triangle");
+    beep(1046, 0.32, 420, "triangle");
+    beep(880, 0.32, 420, "triangle");
+  }
+}
+function toggleSound(){
+  soundOn = !soundOn;
+  document.getElementById("sound-toggle").textContent = "sound: " + (soundOn?"on":"off");
+}
+</script>
+</body>
+</html>
