@@ -31,6 +31,7 @@
   header .eyebrow{color:var(--sub);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
   header h1{font-size:40px;line-height:1.1;}
   header .meta{color:var(--sub);font-size:14px;margin-top:8px;}
+  header .encourage{font-family:'Fraunces',serif;font-size:19px;color:var(--press);margin-top:14px;font-style:italic;}
   .reset-all-btn{
     margin-top:16px;padding:10px 16px;border-radius:8px;border:1px solid var(--line);
     background:none;color:var(--sub);font-family:'DM Mono',monospace;font-size:14px;
@@ -213,6 +214,7 @@
     <header>
       <h1>Elbow PT Timer</h1>
       <div class="meta">Pick an exercise. Adjust reps, hold, and rest if needed. Press start.</div>
+      <div class="encourage">Make James proud.</div>
       <button class="reset-all-btn" onclick="resetAllCompleted()">Reset today's checkmarks</button>
     </header>
     <div class="grid" id="exercise-grid"></div>
@@ -256,7 +258,8 @@
         <div class="dashes" id="run-dashes"></div>
         <div class="controls">
           <button class="ctrl-btn primary" id="btn-toggle" onclick="togglePause()">Pause</button>
-          <button class="ctrl-btn" onclick="resetExercise()">Reset</button>
+          <button class="ctrl-btn" id="btn-reset" onclick="resetExercise()">Reset</button>
+          <button class="ctrl-btn primary" id="btn-next" onclick="goToNextExercise()" style="display:none;">Ready for next exercise</button>
         </div>
       </div>
     </div>
@@ -322,8 +325,8 @@ const EXERCISES = [
     note:"Small resistance band applying outward pressure against the fingers.",
     holdSec:5, restSec:3, reps:24 },
   { id:15, name:"Seated weighted lift", cat:"Strengthening",
-    note:"Arm rotated through three directions with a weight, one set per direction.",
-    holdSec:3, restSec:3,
+    note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
+    holdSec:5, restSec:3, phaseGapSec:5,
     phases:[
       { label:"Upward", reps:24 },
       { label:"Sideways", reps:24 },
@@ -549,6 +552,9 @@ function beginSession(){
   document.getElementById("confetti").innerHTML = "";
   document.getElementById("switch-banner").style.display = "none";
   document.getElementById("run-dial").style.display = "flex";
+  document.getElementById("btn-toggle").style.display = "inline-block";
+  document.getElementById("btn-reset").style.display = "inline-block";
+  document.getElementById("btn-next").style.display = "none";
   const phases = buildPhaseQueue(current);
   const totalReps = phases.reduce((a,p)=>a+p.reps,0);
   session = {
@@ -573,6 +579,25 @@ function beginSession(){
 function resetExercise(){
   stopLoop();
   startExercise();
+}
+
+function goToNextExercise(){
+  stopLoop();
+  const idx = EXERCISES.findIndex(e=>e.id===current.id);
+  let next = null;
+  for(let i=1;i<=EXERCISES.length;i++){
+    const candidate = EXERCISES[(idx+i) % EXERCISES.length];
+    if(!completedMap[candidate.id]){ next = candidate; break; }
+  }
+  if(!next){
+    goToList();
+    return;
+  }
+  current = JSON.parse(JSON.stringify(next));
+  showScreen("screen-run");
+  requestWakeLock();
+  document.getElementById("run-name").textContent = current.name;
+  runPreCountdown(3, ()=>{ beginSession(); });
 }
 
 function renderDashes(){
@@ -704,6 +729,8 @@ function render(){
       repCounter.innerHTML = `<span>${session.totalRepsDone} / ${session.totalReps} reps</span>`;
     }
     document.getElementById("btn-toggle").style.display = "none";
+    document.getElementById("btn-reset").style.display = "none";
+    document.getElementById("btn-next").style.display = "inline-block";
     if(!session.celebrated){
       session.celebrated = true;
       document.getElementById("great-job").style.display = "block";
