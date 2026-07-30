@@ -387,15 +387,35 @@ let rafId = null;
 
 // ---- Completed tracking ----
 let completedMap = {};
+
+// The PT "day" rolls over at 3am rather than midnight, so late-night
+// sessions before 3am still count toward the previous day.
+function getPTDayKey(date){
+  const d = new Date(date);
+  if(d.getHours() < 3) d.setDate(d.getDate() - 1);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
 function loadCompleted(){
   try{
     const raw = localStorage.getItem("pt-timer-completed");
     completedMap = raw ? JSON.parse(raw) : {};
   }catch(e){ completedMap = {}; }
+  checkDailyReset();
 }
 function saveCompleted(){
   try{ localStorage.setItem("pt-timer-completed", JSON.stringify(completedMap)); }
   catch(e){ /* storage unavailable, state just stays in memory for this session */ }
+}
+function checkDailyReset(){
+  const todayKey = getPTDayKey(new Date());
+  let storedKey = null;
+  try{ storedKey = localStorage.getItem("pt-timer-daykey"); }catch(e){ /* ignore */ }
+  if(storedKey !== todayKey){
+    completedMap = {};
+    try{ localStorage.setItem("pt-timer-daykey", todayKey); }catch(e){ /* ignore */ }
+    saveCompleted();
+  }
 }
 function markComplete(id){
   completedMap[id] = true;
@@ -414,6 +434,12 @@ function resetAllCompleted(){
   renderList();
 }
 loadCompleted();
+// Catch a 3am rollover even if the page is left open overnight
+setInterval(()=>{ checkDailyReset(); renderList(); }, 60000);
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "visible"){ checkDailyReset(); renderList(); }
+});
+
 
 // ---- List screen ----
 function specLine(ex){
