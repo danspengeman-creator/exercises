@@ -474,6 +474,7 @@ function goToList(){
   stopLoop();
   releaseWakeLock();
   showScreen("screen-list");
+  window.scrollTo({top:0, behavior:"smooth"});
 }
 
 // ---- Setup screen ----
@@ -647,6 +648,7 @@ function allExercisesComplete(){
 
 function showAllDone(){
   showScreen("screen-alldone");
+  window.scrollTo({top:0, behavior:"smooth"});
   const wrap = document.getElementById("alldone-confetti");
   wrap.innerHTML = "";
   const bits = ["✦","●","▲","■","✦","●"];
@@ -819,6 +821,7 @@ function render(){
       document.getElementById("great-job").style.display = "block";
       fireConfetti();
       markComplete(current.id);
+      window.scrollTo({top:0, behavior:"smooth"});
     }
     return;
   }
