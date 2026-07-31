@@ -151,8 +151,8 @@
   .state-word.rest{color:var(--rest);}
   .state-word.done{color:var(--done);}
 
-  .rep-counter{font-size:18px;color:var(--text);margin-bottom:18px;}
-  .rep-counter span{color:var(--sub);}
+  .rep-counter{font-size:26px;color:var(--sub);margin-bottom:18px;font-weight:500;}
+  .rep-counter span{color:var(--press);font-family:'Fraunces',serif;font-weight:600;font-size:30px;}
 
   .dashes{display:flex;flex-wrap:nowrap;gap:3px;justify-content:center;width:100%;margin:0 auto 22px;overflow:hidden;}
   .dash{flex:1 1 0;min-width:2px;max-width:14px;height:16px;border-radius:2px;background:var(--line);}
@@ -667,6 +667,7 @@ function showAllDone(){
 
 function goToNextExercise(){
   stopLoop();
+  releaseWakeLock();
   const idx = EXERCISES.findIndex(e=>e.id===current.id);
   let next = null;
   for(let i=1;i<=EXERCISES.length;i++){
@@ -674,15 +675,11 @@ function goToNextExercise(){
     if(!completedMap[candidate.id]){ next = candidate; break; }
   }
   if(!next){
-    releaseWakeLock();
     showAllDone();
     return;
   }
-  current = JSON.parse(JSON.stringify(next));
-  showScreen("screen-run");
-  requestWakeLock();
-  document.getElementById("run-name").textContent = current.name;
-  runPreCountdown(3, ()=>{ beginSession(); });
+  openSetup(next.id);
+  window.scrollTo({top:0, behavior:"smooth"});
 }
 
 function renderDashes(){
