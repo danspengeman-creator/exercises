@@ -1,7 +1,8 @@
 {
   "name": "Elbow PT Timer",
   "short_name": "PT Timer",
-  "start_url": "pt-timer.html",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0b0d10",
