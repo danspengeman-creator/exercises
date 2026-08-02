@@ -403,11 +403,51 @@ async function requestWakeLock(){
       wakeLock = await navigator.wakeLock.request("screen");
       wakeLock.addEventListener("release", ()=>{ wakeLock = null; });
     }
-  }catch(e){ /* wake lock unavailable or denied, exercise still works fine */ }
+  }catch(e){ /* wake lock unavailable or denied, fallback below still runs */ }
+  enableNoSleepFallback();
 }
 function releaseWakeLock(){
   if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; }
+  disableNoSleepFallback();
 }
+
+// Fallback for contexts (like some installed standalone apps) where the
+// Wake Lock API is flaky or unavailable: play a tiny invisible looping
+// video, which browsers also treat as a reason to keep the screen on.
+let noSleepVideo = null;
+function enableNoSleepFallback(){
+  if(noSleepVideo) return;
+  try{
+    const canvas = document.createElement("canvas");
+    canvas.width = 1; canvas.height = 1;
+    const ctx = canvas.getContext("2d");
+    ctx.fillRect(0,0,1,1);
+    const stream = canvas.captureStream(1);
+    const video = document.createElement("video");
+    video.muted = true;
+    video.setAttribute("muted","");
+    video.setAttribute("playsinline","");
+    video.setAttribute("webkit-playsinline","");
+    video.loop = true;
+    video.style.position = "fixed";
+    video.style.width = "1px";
+    video.style.height = "1px";
+    video.style.opacity = "0";
+    video.style.pointerEvents = "none";
+    video.srcObject = stream;
+    document.body.appendChild(video);
+    video.play().catch(()=>{});
+    noSleepVideo = video;
+  }catch(e){ /* canvas capture unsupported, nothing more we can do here */ }
+}
+function disableNoSleepFallback(){
+  if(noSleepVideo){
+    noSleepVideo.pause();
+    noSleepVideo.remove();
+    noSleepVideo = null;
+  }
+}
+
 document.addEventListener("visibilitychange", ()=>{
   if(document.visibilityState === "visible" && document.getElementById("screen-run").classList.contains("active")){
     requestWakeLock();
