@@ -105,16 +105,19 @@
     margin-top:24px;width:100%;padding:16px;border-radius:10px;border:none;
     background:var(--press);color:#1a0d05;font-family:'DM Mono',monospace;font-weight:500;
     font-size:18px;letter-spacing:.04em;cursor:pointer;min-height:52px;touch-action:manipulation;
+    box-shadow:0 3px 0 rgba(0,0,0,0.35);transition:transform .08s, box-shadow .08s, filter .1s;
   }
   .primary-btn:hover{filter:brightness(1.08);}
+  .primary-btn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,0.35);}
 
   .mark-btn{
     margin-top:10px;width:100%;padding:14px;border-radius:10px;
     background:none;border:1px solid var(--line);color:var(--sub);
     font-family:'DM Mono',monospace;font-size:16px;cursor:pointer;min-height:48px;
-    touch-action:manipulation;
+    touch-action:manipulation;transition:transform .08s, box-shadow .08s;
   }
   .mark-btn.is-complete{border-color:var(--done);color:var(--done);}
+  .mark-btn:active{transform:scale(.97);box-shadow:inset 0 2px 6px rgba(0,0,0,0.4);}
 
   /* Run screen */
   .run{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 18px;text-align:center;}
@@ -170,10 +173,25 @@
     padding:14px 22px;border-radius:8px;border:1px solid var(--line);background:var(--bg);
     color:var(--text);font-family:'DM Mono',monospace;font-size:17px;cursor:pointer;
     min-height:48px;flex:1 1 130px;max-width:220px;touch-action:manipulation;
+    box-shadow:0 3px 0 rgba(0,0,0,0.3);transition:transform .08s, box-shadow .08s, filter .1s, border-color .15s, background .15s;
   }
   .ctrl-btn:hover{border-color:#3a4048;}
+  .ctrl-btn:active{transform:translateY(2px);box-shadow:0 0 0 rgba(0,0,0,0);}
   .ctrl-btn.primary{background:var(--press);color:#1a0d05;border-color:var(--press);}
   .ctrl-btn.primary:hover{filter:brightness(1.08);}
+  .ctrl-btn.is-paused{background:var(--switch);border-color:var(--switch);color:#1a0d2e;}
+
+  .break-banner{
+    width:100%;
+    background:linear-gradient(135deg, #1c3a3f, #142a2d);
+    border:2px solid var(--rest);
+    border-radius:18px;
+    padding:28px 20px;
+    margin:0 auto 20px;
+    text-align:center;
+  }
+  .break-title{font-family:'Fraunces',serif;font-size:26px;color:var(--rest);letter-spacing:.02em;margin-bottom:14px;}
+  .break-count{font-family:'Fraunces',serif;font-size:64px;color:var(--rest);line-height:1;margin-bottom:18px;}
 
   .sound-toggle{
     color:var(--sub);font-size:13px;cursor:pointer;user-select:none;
@@ -251,7 +269,7 @@
     <header>
       <h1>Elbow PT Timer</h1>
       <div class="meta">Pick an exercise. Adjust reps, hold, and rest if needed. Press start.</div>
-      <div class="encourage">Make James proud.</div>
+      <div class="encourage">Make the Spear team proud.</div>
       <button class="reset-all-btn" onclick="resetAllCompleted()">Reset today's checkmarks</button>
     </header>
     <div class="grid" id="exercise-grid"></div>
@@ -291,11 +309,17 @@
           <div class="switch-next" id="switch-next"></div>
           <div class="switch-count" id="switch-count"></div>
         </div>
+        <div class="break-banner" id="break-banner" style="display:none;">
+          <div class="break-title">Taking a break</div>
+          <div class="break-count" id="break-count">60</div>
+          <button class="ctrl-btn" onclick="skipBreak()">Resume now</button>
+        </div>
         <div class="rep-counter" id="run-rep"></div>
         <div class="dashes" id="run-dashes"></div>
         <div class="controls">
           <button class="ctrl-btn primary" id="btn-toggle" onclick="togglePause()">Pause</button>
           <button class="ctrl-btn" id="btn-reset" onclick="resetExercise()">Reset</button>
+          <button class="ctrl-btn" id="btn-break" onclick="startBreak()">Take a break</button>
           <button class="ctrl-btn primary" id="btn-next" onclick="goToNextExercise()" style="display:none;">Ready for next exercise</button>
         </div>
       </div>
@@ -306,7 +330,7 @@
     <div class="alldone-card">
       <div class="alldone-confetti" id="alldone-confetti"></div>
       <div class="alldone-title">Well done!</div>
-      <div class="alldone-sub">Every exercise is complete. Make James proud today.</div>
+      <div class="alldone-sub">Every exercise is complete. Make the Spear team proud today.</div>
       <button class="primary-btn" onclick="goToList()">Back to exercises</button>
     </div>
   </div>
@@ -378,6 +402,13 @@ const EXERCISES = [
       { label:"Upward", reps:24 },
       { label:"Sideways", reps:24 },
       { label:"Downward", reps:24 },
+    ]},
+  { id:16, name:"Towel pull", cat:"Strengthening",
+    note:"Pulling a towel with the hand, one set per direction. A longer rest kicks in when switching direction.",
+    holdSec:3, restSec:2, phaseGapSec:5,
+    phases:[
+      { label:"Pulling outward", reps:24 },
+      { label:"Pulling inward", reps:24 },
     ]},
 ];
 
@@ -546,6 +577,10 @@ function showScreen(id){
 }
 function goToList(){
   stopLoop();
+  if(breakState){
+    if(breakState.rafId) cancelAnimationFrame(breakState.rafId);
+    breakState = null;
+  }
   releaseWakeLock();
   showScreen("screen-list");
   window.scrollTo({top:0, behavior:"smooth"});
@@ -683,12 +718,21 @@ function runPreCountdown(n, onDone){
 }
 
 function beginSession(){
+  if(breakState){
+    if(breakState.rafId) cancelAnimationFrame(breakState.rafId);
+    breakState = null;
+  }
   document.getElementById("great-job").style.display = "none";
   document.getElementById("confetti").innerHTML = "";
   document.getElementById("switch-banner").style.display = "none";
+  document.getElementById("break-banner").style.display = "none";
   document.getElementById("run-dial").style.display = "flex";
+  document.getElementById("run-dashes").style.display = "flex";
+  document.getElementById("run-rep").style.display = "block";
   document.getElementById("btn-toggle").style.display = "inline-block";
+  document.getElementById("btn-toggle").classList.remove("is-paused");
   document.getElementById("btn-reset").style.display = "inline-block";
+  document.getElementById("btn-break").style.display = "inline-block";
   document.getElementById("btn-next").style.display = "none";
   const phases = buildPhaseQueue(current);
   const totalReps = phases.reduce((a,p)=>a+p.reps,0);
@@ -782,14 +826,78 @@ function stopLoop(){
   rafId = null;
 }
 
+// ---- Take a break ----
+let breakState = null; // {timeLeft, rafId, wasPaused}
+function startBreak(){
+  if(!session || session.finished || breakState) return;
+  breakState = { timeLeft: 60, rafId: null, wasPaused: session.paused };
+  session.paused = true;
+  stopLoop();
+  document.getElementById("run-dial").style.display = "none";
+  document.getElementById("switch-banner").style.display = "none";
+  document.getElementById("run-dashes").style.display = "none";
+  document.getElementById("run-rep").style.display = "none";
+  document.getElementById("btn-toggle").style.display = "none";
+  document.getElementById("btn-reset").style.display = "none";
+  document.getElementById("btn-break").style.display = "none";
+  document.getElementById("break-banner").style.display = "block";
+  document.getElementById("break-count").textContent = "60";
+  playCue("break");
+  breakState.lastTick = performance.now();
+  breakState.rafId = requestAnimationFrame(breakTick);
+}
+function breakTick(now){
+  if(!breakState) return;
+  const dt = (now - breakState.lastTick)/1000;
+  breakState.lastTick = now;
+  breakState.timeLeft -= dt;
+  if(breakState.timeLeft <= 0){
+    endBreak();
+  } else {
+    document.getElementById("break-count").textContent = Math.ceil(breakState.timeLeft);
+    breakState.rafId = requestAnimationFrame(breakTick);
+  }
+}
+function skipBreak(){
+  endBreak();
+}
+function endBreak(){
+  if(!breakState) return;
+  if(breakState.rafId) cancelAnimationFrame(breakState.rafId);
+  const resumePlaying = !breakState.wasPaused;
+  breakState = null;
+  document.getElementById("break-banner").style.display = "none";
+  document.getElementById("run-dial").style.display = "flex";
+  document.getElementById("run-dashes").style.display = "flex";
+  document.getElementById("run-rep").style.display = "block";
+  document.getElementById("btn-toggle").style.display = "inline-block";
+  document.getElementById("btn-reset").style.display = "inline-block";
+  document.getElementById("btn-break").style.display = "inline-block";
+  playCue("resume");
+  if(session && !session.finished){
+    session.paused = !resumePlaying;
+    document.getElementById("btn-toggle").textContent = session.paused ? "Resume" : "Pause";
+    document.getElementById("btn-toggle").classList.toggle("is-paused", session.paused);
+    render();
+    if(resumePlaying){
+      session.lastTick = performance.now();
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+}
+
 function togglePause(){
   if(!session || session.finished) return;
   session.paused = !session.paused;
-  document.getElementById("btn-toggle").textContent = session.paused ? "Resume" : "Pause";
+  const btn = document.getElementById("btn-toggle");
+  btn.textContent = session.paused ? "Resume" : "Pause";
+  btn.classList.toggle("is-paused", session.paused);
   if(!session.paused){
+    playCue("resume");
     session.lastTick = performance.now();
     rafId = requestAnimationFrame(tick);
   } else {
+    playCue("pause");
     stopLoop();
   }
 }
@@ -886,6 +994,7 @@ function render(){
     }
     document.getElementById("btn-toggle").style.display = "none";
     document.getElementById("btn-reset").style.display = "none";
+    document.getElementById("btn-break").style.display = "none";
     document.getElementById("btn-next").style.display = "inline-block";
     if(!session.celebrated){
       session.celebrated = true;
@@ -1000,6 +1109,9 @@ function playCue(type){
     beep(950, 0.09, 260, "sawtooth");
     beep(500, 0.14, 390, "sawtooth");
   }
+  if(type==="pause"){ beep(520, 0.14, 0, "sine"); beep(340, 0.2, 110, "sine"); }
+  if(type==="resume"){ beep(340, 0.12, 0, "sine"); beep(520, 0.2, 100, "sine"); }
+  if(type==="break"){ beep(440, 0.2, 0, "sine"); beep(330, 0.28, 200, "sine"); }
   if(type==="done"){
     beep(523, 0.14, 0, "triangle");
     beep(659, 0.14, 130, "triangle");
