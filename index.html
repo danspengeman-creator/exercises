@@ -356,7 +356,7 @@ const EXERCISES = [
     holdSec:360 },
   { id:5, name:"Seated flexion overpressure", cat:"Flexion",
     note:"Passive-assisted elbow flexion stretch. Target intensity 5 to 7 out of 10.",
-    holdSec:15, restSec:15, reps:25 },
+    holdSec:20, restSec:20, reps:20 },
   { id:7, name:"Four-direction hand blocking", cat:"Rotation",
     note:"Wrist circumduction with isometric blocking, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:2, phaseGapSec:5,
@@ -434,17 +434,16 @@ async function requestWakeLock(){
       wakeLock = await navigator.wakeLock.request("screen");
       wakeLock.addEventListener("release", ()=>{ wakeLock = null; });
     }
-  }catch(e){ /* wake lock unavailable or denied, fallback below still runs */ }
-  enableNoSleepFallback();
+  }catch(e){ /* wake lock unavailable or denied, the always-on video fallback below still covers it */ }
 }
 function releaseWakeLock(){
   if(wakeLock){ wakeLock.release().catch(()=>{}); wakeLock = null; }
-  disableNoSleepFallback();
 }
 
-// Fallback for contexts (like some installed standalone apps) where the
-// Wake Lock API is flaky or unavailable: play a tiny invisible looping
-// video, which browsers also treat as a reason to keep the screen on.
+// Always-on fallback: an invisible looping video keeps the screen awake
+// on every screen of the app, not just during an active exercise. This
+// covers contexts (like some installed standalone apps) where the
+// official Wake Lock API is flaky or unavailable.
 let noSleepVideo = null;
 function enableNoSleepFallback(){
   if(noSleepVideo) return;
@@ -471,17 +470,16 @@ function enableNoSleepFallback(){
     noSleepVideo = video;
   }catch(e){ /* canvas capture unsupported, nothing more we can do here */ }
 }
-function disableNoSleepFallback(){
-  if(noSleepVideo){
-    noSleepVideo.pause();
-    noSleepVideo.remove();
-    noSleepVideo = null;
-  }
-}
-
+// Start it immediately on load, and keep re-confirming it whenever the
+// page becomes visible again, so it stays running for the life of the tab.
+enableNoSleepFallback();
 document.addEventListener("visibilitychange", ()=>{
-  if(document.visibilityState === "visible" && document.getElementById("screen-run").classList.contains("active")){
-    requestWakeLock();
+  if(document.visibilityState === "visible"){
+    enableNoSleepFallback();
+    if(noSleepVideo && noSleepVideo.paused) noSleepVideo.play().catch(()=>{});
+    if(document.getElementById("screen-run").classList.contains("active")){
+      requestWakeLock();
+    }
   }
 });
 
