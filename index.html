@@ -71,6 +71,11 @@
   .card .idx{color:var(--sub);font-size:12px;letter-spacing:.1em;}
   .card h3{font-size:22px;margin-top:4px;line-height:1.2;}
   .card .cat{display:inline-block;margin-top:8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--bg);background:var(--sub);padding:2px 7px;border-radius:20px;}
+  .card .equip{display:inline-block;margin-top:8px;margin-left:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:20px;border:1px solid currentColor;}
+  .card .equip.equip-weight{color:var(--press);}
+  .card .equip.equip-band{color:var(--rest);}
+  .card .equip.equip-towel{color:var(--switch);}
+  .card .equip.equip-none{color:var(--sub);}
   .card .spec{color:var(--sub);font-size:14px;margin-top:10px;line-height:1.5;}
 
   /* Setup / run screen */
@@ -305,7 +310,7 @@
           <div class="unit">sec</div>
         </div>
         <div class="switch-banner" id="switch-banner" style="display:none;">
-          <div class="switch-title">Switch directions</div>
+          <div class="switch-title" id="switch-title">Switch directions</div>
           <div class="switch-next" id="switch-next"></div>
           <div class="switch-count" id="switch-count"></div>
         </div>
@@ -343,59 +348,25 @@
 // type: "reps" (press/rest cycles) or "hold" (single sustained hold, no reps)
 // phases: for multi-direction exercises, an array of {label, reps}; otherwise a single implicit phase
 const EXERCISES = [
-  { id:1, name:"Wall press series", cat:"Strengthening",
-    note:"Isometric wall press through three positions: fist push, forearm push inward, forearm push outward. A longer rest kicks in when switching position.",
-    holdSec:5, restSec:2, phaseGapSec:5,
-    phases:[
-      { label:"Fist push", reps:30 },
-      { label:"Push inward", reps:30 },
-      { label:"Push outward", reps:30 },
-    ]},
-  { id:4, name:"Lying weighted hang", cat:"Extension", type:"hold",
-    note:"Gravity-assisted passive elbow extension stretch. Use a 2 to 5 lb weight. One sustained hold, no reps.",
-    holdSec:360 },
-  { id:5, name:"Seated flexion overpressure", cat:"Flexion",
-    note:"Passive-assisted elbow flexion stretch. Target intensity 5 to 7 out of 10.",
+  { id:1, name:"Seated flexion overpressure", cat:"Flexion", equip:"none",
+    note:"Passive-assisted elbow flexion stretch. Target intensity 5 to 7 out of 10. Can also be done standing, using the wall to push against the back of the hand or wrist for additional overpressure.",
     holdSec:20, restSec:20, reps:20 },
-  { id:7, name:"Four-direction hand blocking", cat:"Rotation",
-    note:"Wrist circumduction with isometric blocking, one set per direction. A longer rest kicks in when switching direction.",
-    holdSec:5, restSec:2, phaseGapSec:5,
-    phases:[
-      { label:"Rotating inward", reps:30 },
-      { label:"Rotating outward", reps:30 },
-      { label:"Pushing up", reps:30 },
-      { label:"Pushing down", reps:30 },
-    ]},
-  { id:8, name:"Resistance band side step", cat:"Strengthening",
-    note:"Elastic resistance side step, one set stepping left and one set stepping right. A longer rest kicks in when switching direction.",
-    holdSec:5, restSec:3, phaseGapSec:5,
-    phases:[
-      { label:"Step left", reps:24 },
-      { label:"Step right", reps:24 },
-    ]},
-  { id:9, name:"Sword pull diagonal lift", cat:"Functional",
-    note:"Diagonal PNF pattern, one set per direction. A longer rest kicks in when switching direction.",
-    holdSec:5, restSec:3, phaseGapSec:5,
-    phases:[
-      { label:"Diagonal up and out", reps:24 },
-      { label:"Diagonal down and in", reps:24 },
-    ]},
-  { id:10, name:"Side-lying external rotation", cat:"Strengthening",
+  { id:2, name:"Lying weighted hang", cat:"Extension", type:"hold", equip:"weight",
+    note:"Gravity-assisted passive elbow extension stretch, split into two three-minute holds with a short break in between to readjust. Let the weight hang fully for the entire three minutes each time. Use a 2 to 5 lb weight.",
+    holdSegments:[180,180], holdBreakSec:30 },
+  { id:3, name:"Standing weighted extension drop", cat:"Extension", equip:"weight",
+    note:"Start with the weight held close to the chest, then slowly lower it until the arm fully straightens, working extension rather than flexion. Hold at the bottom, then take the weight out of the hand, bring the hand back up to the chest, and place the weight back in before the next rep.",
+    holdSec:5, restSec:5, reps:10 },
+  { id:4, name:"Standing table push extension", cat:"Extension", equip:"none",
+    note:"Stand with hands on a table at a slight angle, holding yourself up, then push outward through both arms and shoulders to straighten the arms as much as possible.",
+    holdSec:5, restSec:3, reps:20 },
+  { id:5, name:"Side-lying external rotation", cat:"Strengthening", equip:"weight",
     note:"Sidelying shoulder external rotation with weight. Continuous motion, about 3 seconds up and 3 seconds down.",
     holdSec:3, restSec:1, reps:30 },
-  { id:11, name:"Ulnar nerve glide", cat:"Nerve",
-    note:"Ulnar nerve mobilization. Slow, fluid motion rather than a hard hold.",
-    holdSec:3, restSec:2, reps:10 },
-  { id:12, name:"45-degree shoulder lift", cat:"Strengthening",
+  { id:6, name:"45-degree shoulder lift", cat:"Strengthening", equip:"weight",
     note:"Scaption, shoulder elevation in the scapular plane to eye level, 3 lb weight.",
     holdSec:5, restSec:3, reps:24 },
-  { id:13, name:"Towel squeeze", cat:"Strengthening",
-    note:"Squeeze a rolled towel in the fist.",
-    holdSec:5, restSec:2, reps:30 },
-  { id:14, name:"Hand outward flex", cat:"Rotation",
-    note:"Small resistance band applying outward pressure against the fingers.",
-    holdSec:5, restSec:3, reps:24 },
-  { id:15, name:"Seated weighted lift", cat:"Strengthening",
+  { id:7, name:"Seated weighted lift", cat:"Strengthening", equip:"weight",
     note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:3, phaseGapSec:5,
     phases:[
@@ -403,13 +374,38 @@ const EXERCISES = [
       { label:"Sideways", reps:24 },
       { label:"Downward", reps:24 },
     ]},
-  { id:16, name:"Towel pull", cat:"Strengthening",
+  { id:8, name:"Pronation-supination weight turn", cat:"Rotation", equip:"weight",
+    note:"Hold a weight with the arm straight, starting turned left, then rotate to the right and back, holding at each side.",
+    holdStages:[ { sec:3, label:"Turn left" }, { sec:3, label:"Turn right" } ],
+    restSec:2, reps:20 },
+  { id:9, name:"Resistance band side step (Mario jump)", cat:"Strengthening", equip:"band",
+    note:"Elastic resistance side step with a 90-degree punch up on the out motion, one set stepping left and one set stepping right. A longer rest kicks in when switching direction.",
+    holdSec:3, restSec:3, phaseGapSec:5,
+    phases:[
+      { label:"Step left", reps:24 },
+      { label:"Step right", reps:24 },
+    ]},
+  { id:10, name:"Sword pull diagonal lift", cat:"Functional", equip:"band",
+    note:"Diagonal PNF pattern, one set per direction. A longer rest kicks in when switching direction.",
+    holdSec:5, restSec:3, phaseGapSec:5,
+    phases:[
+      { label:"Diagonal up and out", reps:24 },
+      { label:"Diagonal down and in", reps:24 },
+    ]},
+  { id:11, name:"Towel squeeze", cat:"Strengthening", equip:"towel",
+    note:"Squeeze a rolled towel in the fist.",
+    holdSec:5, restSec:2, reps:30 },
+  { id:12, name:"Towel pull", cat:"Strengthening", equip:"towel",
     note:"Pulling a towel with the hand, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:3, restSec:2, phaseGapSec:5,
     phases:[
       { label:"Pulling outward", reps:24 },
       { label:"Pulling inward", reps:24 },
     ]},
+  { id:13, name:"Ulnar nerve glide", cat:"Nerve", equip:"none",
+    note:"Like tossing a Q-tip away. Start with the hand pinched at the thumb and pointer finger as close to the ear as possible, hold, then sweep it out and away to the side, as if flicking a Q-tip off to the side, and hold there too.",
+    holdStages:[ { sec:5, label:"Near ear" }, { sec:3, label:"Away from ear" } ],
+    restSec:3, reps:10 },
 ];
 
 // ---- Orientation lock ----
@@ -546,9 +542,16 @@ document.addEventListener("visibilitychange", ()=>{
 
 // ---- List screen ----
 function specLine(ex){
-  if(ex.type==="hold") return `1 hold &times; ${Math.round(ex.holdSec/60)} min`;
+  if(ex.type==="hold") return `${ex.holdSegments.length} holds &times; ${Math.round(ex.holdSegments[0]/60)} min, ${ex.holdBreakSec}s break between`;
+  if(ex.holdStages) return `${ex.reps} reps, ${ex.holdStages.map(s=>s.sec+"s").join(" + ")} hold, ${ex.restSec}s rest`;
   if(ex.phases) return `${ex.phases.length} directions &times; ${ex.phases[0].reps} reps, ${ex.holdSec}s hold`;
   return `${ex.reps} reps, ${ex.holdSec}s hold, ${ex.restSec}s rest`;
+}
+function equipLabel(equip){
+  if(equip==="weight") return { text:"Weight", cls:"equip-weight" };
+  if(equip==="band") return { text:"Band", cls:"equip-band" };
+  if(equip==="towel") return { text:"Towel", cls:"equip-towel" };
+  return { text:"No equipment", cls:"equip-none" };
 }
 function renderList(){
   const grid = document.getElementById("exercise-grid");
@@ -557,11 +560,13 @@ function renderList(){
     const card = document.createElement("div");
     card.className = "card" + (completedMap[ex.id] ? " completed" : "");
     card.onclick = ()=>openSetup(ex.id);
+    const equip = equipLabel(ex.equip);
     card.innerHTML = `
       <div class="check-badge">&check;</div>
       <div class="idx">EX ${String(ex.id).padStart(2,"0")}</div>
       <h3>${ex.name}</h3>
       <span class="cat">${ex.cat}</span>
+      <span class="equip ${equip.cls}">${equip.text}</span>
       <div class="spec">${specLine(ex)}</div>
     `;
     grid.appendChild(card);
@@ -599,8 +604,22 @@ function openSetup(id){
 
   if(ex.type==="hold"){
     fields.innerHTML = `
-      <div class="field"><label>Hold (minutes)</label>
-        <input type="number" inputmode="decimal" min="1" step="0.5" id="f-hold-min" value="${(ex.holdSec/60)}"></div>`;
+      <div class="field"><label>Hold length (minutes)</label>
+        <input type="number" inputmode="decimal" min="0.5" step="0.5" id="f-hold-min" value="${(ex.holdSegments[0]/60)}"></div>
+      <div class="field"><label>Number of holds</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-hold-count" value="${ex.holdSegments.length}"></div>
+      <div class="field"><label>Break between (seconds)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="f-hold-break" value="${ex.holdBreakSec}"></div>`;
+  } else if(ex.holdStages){
+    fields.innerHTML = `
+      <div class="field"><label>Reps</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-reps" value="${ex.reps}"></div>
+      <div class="field"><label>${ex.holdStages[0].label} hold (s)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-hold-stage-0" value="${ex.holdStages[0].sec}"></div>
+      <div class="field"><label>${ex.holdStages[1].label} hold (s)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="1" id="f-hold-stage-1" value="${ex.holdStages[1].sec}"></div>
+      <div class="field"><label>Rest (seconds)</label>
+        <input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="f-rest" value="${ex.restSec}"></div>`;
   } else if(ex.phases){
     fields.innerHTML = `
       <div class="field"><label>Hold (seconds)</label>
@@ -650,7 +669,21 @@ function toggleMarkComplete(){
 function readSetupFields(){
   if(current.type==="hold"){
     const mins = parseFloat(document.getElementById("f-hold-min").value);
-    current.holdSec = mins ? Math.round(mins*60) : current.holdSec;
+    const count = parseInt(document.getElementById("f-hold-count").value);
+    const brk = parseInt(document.getElementById("f-hold-break").value);
+    const perHold = mins ? Math.round(mins*60) : current.holdSegments[0];
+    const numHolds = count || current.holdSegments.length;
+    current.holdSegments = Array(numHolds).fill(perHold);
+    current.holdBreakSec = (brk || brk === 0) ? brk : current.holdBreakSec;
+  } else if(current.holdStages){
+    current.reps = parseInt(document.getElementById("f-reps").value)||current.reps;
+    const s0 = parseInt(document.getElementById("f-hold-stage-0").value)||current.holdStages[0].sec;
+    const s1 = parseInt(document.getElementById("f-hold-stage-1").value)||current.holdStages[1].sec;
+    current.holdStages = [
+      { sec:s0, label:current.holdStages[0].label },
+      { sec:s1, label:current.holdStages[1].label },
+    ];
+    current.restSec = parseInt(document.getElementById("f-rest").value)||current.restSec;
   } else if(current.phases){
     const hold = parseInt(document.getElementById("f-hold").value)||current.holdSec;
     const rest = parseInt(document.getElementById("f-rest").value)||current.restSec;
@@ -723,6 +756,7 @@ function beginSession(){
   document.getElementById("great-job").style.display = "none";
   document.getElementById("confetti").innerHTML = "";
   document.getElementById("switch-banner").style.display = "none";
+  document.getElementById("switch-title").textContent = "Switch directions";
   document.getElementById("break-banner").style.display = "none";
   document.getElementById("run-dial").style.display = "flex";
   document.getElementById("run-dashes").style.display = "flex";
@@ -741,8 +775,10 @@ function beginSession(){
     repInPhase: 0,
     totalRepsDone: 0,
     totalReps,
+    holdIdx: 0,
+    stageIdx: 0,
     mode: current.type==="hold" ? "hold" : "press",
-    timeLeft: current.type==="hold" ? current.holdSec : current.holdSec,
+    timeLeft: current.type==="hold" ? current.holdSegments[0] : (current.holdStages ? current.holdStages[0].sec : current.holdSec),
     paused: false,
     lastTick: null,
     finished: false,
@@ -916,14 +952,39 @@ function tick(now){
 
 function advanceState(){
   if(current.type==="hold"){
-    session.finished = true;
-    session.mode = "done";
+    if(session.mode === "hold"){
+      session.holdIdx++;
+      if(session.holdIdx >= current.holdSegments.length){
+        session.finished = true;
+        session.mode = "done";
+        render();
+        playCue("done");
+        return;
+      }
+      session.mode = "holdbreak";
+      session.timeLeft = current.holdBreakSec;
+      playCue("switchdir");
+    } else {
+      session.mode = "hold";
+      session.timeLeft = current.holdSegments[session.holdIdx];
+      playCue("press");
+    }
     render();
-    playCue("done");
+    rafId = requestAnimationFrame(tick);
     return;
   }
 
   if(session.mode === "press"){
+    // multi-stage hold (e.g. hold near, sweep, hold away): advance the
+    // stage within this rep before counting the rep as complete
+    if(current.holdStages && session.stageIdx < current.holdStages.length - 1){
+      session.stageIdx++;
+      session.timeLeft = current.holdStages[session.stageIdx].sec;
+      playCue("press");
+      render();
+      rafId = requestAnimationFrame(tick);
+      return;
+    }
     // completed a hold, count the rep
     session.repInPhase++;
     session.totalRepsDone++;
@@ -955,7 +1016,8 @@ function advanceState(){
       renderDashes();
     }
     session.mode = "press";
-    session.timeLeft = current.holdSec;
+    session.stageIdx = 0;
+    session.timeLeft = current.holdStages ? current.holdStages[0].sec : current.holdSec;
     playCue("press");
   }
   render();
@@ -1006,25 +1068,47 @@ function render(){
   document.getElementById("btn-toggle").style.display = "inline-block";
 
   const secs = Math.max(0, Math.ceil(session.timeLeft));
-  num.textContent = current.type==="hold" ? formatTime(session.timeLeft) : secs;
 
   if(current.type==="hold"){
+    const dialEl = document.getElementById("run-dial");
+    const banner = document.getElementById("switch-banner");
+    if(session.mode === "holdbreak"){
+      dialEl.style.display = "none";
+      banner.style.display = "block";
+      document.getElementById("switch-title").textContent = "Readjust";
+      document.getElementById("switch-next").textContent = "Reposition the weight, then the next hold begins.";
+      document.getElementById("switch-count").textContent = secs;
+      stateWord.textContent = "";
+      phaseLabel.textContent = "";
+      repCounter.textContent = "";
+      return;
+    }
+    dialEl.style.display = "flex";
+    banner.style.display = "none";
+    num.textContent = formatTime(session.timeLeft);
     dial.classList.add("mode-press");
     stateWord.textContent = "Hold";
     stateWord.className = "state-word press";
-    phaseLabel.textContent = "Single sustained hold";
+    phaseLabel.textContent = current.holdSegments.length > 1
+      ? `Hold ${session.holdIdx+1} of ${current.holdSegments.length}`
+      : "Single sustained hold";
     repCounter.textContent = "";
     document.getElementById("run-dial").querySelector(".unit").textContent = "min:sec";
     return;
   }
+  num.textContent = secs;
   document.getElementById("run-dial").querySelector(".unit").textContent = "sec";
 
   const label = currentPhaseLabel();
   const phaseIdx = session.phaseIdx;
   const phaseCount = session.phases.length;
-  phaseLabel.textContent = label
-    ? (phaseCount > 1 ? `Direction ${phaseIdx+1} of ${phaseCount}: ${label}` : `Direction: ${label}`)
-    : "";
+  if(current.holdStages && session.mode === "press"){
+    phaseLabel.textContent = current.holdStages[session.stageIdx].label;
+  } else {
+    phaseLabel.textContent = label
+      ? (phaseCount > 1 ? `Direction ${phaseIdx+1} of ${phaseCount}: ${label}` : `Direction: ${label}`)
+      : "";
+  }
 
   const dialEl = document.getElementById("run-dial");
   const banner = document.getElementById("switch-banner");
