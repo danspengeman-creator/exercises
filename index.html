@@ -360,7 +360,7 @@ const EXERCISES = [
   { id:4, name:"Standing table push extension", cat:"Extension", equip:"none",
     note:"Stand with hands on a table at a slight angle, holding yourself up, then push outward through both arms and shoulders to straighten the arms as much as possible.",
     holdSec:5, restSec:3, reps:20 },
-  { id:5, name:"Elbow distraction stretch", cat:"Flexion", equip:"towel",
+  { id:5, name:"Elbow distraction stretch", cat:"Flexion", equip:"towel", voiceCountdown:true,
     note:"Similar to seated flexion overpressure, but with a rolled towel or small pillow placed in the fold of the elbow to add distraction.",
     holdSec:20, restSec:20, reps:20 },
   { id:6, name:"Standing extension and flexion", cat:"Flexion/Extension", equip:"none", voiceCountdown:true,
@@ -370,7 +370,7 @@ const EXERCISES = [
       { label:"Flexion", reps:20 },
       { label:"Extension", reps:20 },
     ]},
-  { id:7, name:"Seated weighted lift", cat:"Strengthening", equip:"weight", voiceCountdown:true,
+  { id:7, name:"Seated weighted lift", cat:"Strengthening", equip:"weight",
     note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:3, phaseGapSec:5,
     phases:[
@@ -715,16 +715,37 @@ function startExercise(){
   runPreCountdown(3, ()=>{ beginSession(); });
 }
 
+let preferredVoice = null;
+function pickPreferredVoice(){
+  if(!("speechSynthesis" in window)) return;
+  const voices = window.speechSynthesis.getVoices();
+  if(!voices || !voices.length) return;
+  // Prefer a local (on-device) English voice over a network-streamed one,
+  // since local voices tend to sound cleaner and avoid streaming artifacts.
+  preferredVoice =
+    voices.find(v => v.localService && v.lang && v.lang.startsWith("en")) ||
+    voices.find(v => v.localService) ||
+    voices.find(v => v.lang && v.lang.startsWith("en")) ||
+    voices[0];
+}
+if("speechSynthesis" in window){
+  pickPreferredVoice();
+  window.speechSynthesis.addEventListener("voiceschanged", pickPreferredVoice);
+}
+
 function speak(text){
   if(!soundOn) return;
   if(!("speechSynthesis" in window)) return;
-  try{
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1;
-    u.pitch = 1;
-    u.volume = 0.6;
-    window.speechSynthesis.speak(u);
-  }catch(e){ /* speech synthesis unavailable, the beep still plays */ }
+  setTimeout(()=>{
+    try{
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1;
+      u.pitch = 1;
+      u.volume = 0.6;
+      if(preferredVoice) u.voice = preferredVoice;
+      window.speechSynthesis.speak(u);
+    }catch(e){ /* speech synthesis unavailable, the beep still plays */ }
+  }, 90);
 }
 
 function runPreCountdown(n, onDone){
