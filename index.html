@@ -355,16 +355,15 @@ const EXERCISES = [
     note:"Gravity-assisted passive elbow extension stretch, split into two three-minute holds with a short break in between to readjust. Let the weight hang fully for the entire three minutes each time. Use a 2 to 5 lb weight.",
     holdSegments:[180,180], holdBreakSec:30 },
   { id:3, name:"Standing weighted extension drop", cat:"Extension", equip:"weight", voiceCountdown:true,
-    note:"Start with the weight held close to the chest, then slowly lower it over about 8 seconds until the arm fully straightens, working extension rather than flexion. Hold at the bottom, then take the weight out of the hand, bring the hand back up to the chest, and place the weight back in before the next rep.",
-    holdStages:[ { sec:8, label:"Slowly release" }, { sec:5, label:"Hold at bottom" } ],
-    restSec:5, reps:10 },
+    note:"Start with the weight held close to the chest, then slowly extend the arm straight down over about 15 seconds, holding briefly at full extension at the end.",
+    holdSec:15, restSec:0, reps:1 },
   { id:4, name:"Standing table push extension", cat:"Extension", equip:"none",
     note:"Stand with hands on a table at a slight angle, holding yourself up, then push outward through both arms and shoulders to straighten the arms as much as possible.",
     holdSec:5, restSec:3, reps:20 },
   { id:5, name:"Side-lying external rotation", cat:"Strengthening", equip:"weight",
     note:"Sidelying shoulder external rotation with weight. Continuous motion, about 3 seconds up and 3 seconds down.",
     holdSec:3, restSec:1, reps:30 },
-  { id:6, name:"Standing extension and flexion", cat:"Flexion/Extension", equip:"none",
+  { id:6, name:"Standing extension and flexion", cat:"Flexion/Extension", equip:"none", voiceCountdown:true,
     note:"Self-resistance against the wrist, done at two starting angles. For flexion, push down on the wrist and try to bring the arm up. For extension, push up on the wrist with resistance and let it release back down. A longer rest kicks in when switching to the next phase.",
     holdSec:5, restSec:2, phaseGapSec:5,
     phases:[
@@ -373,7 +372,7 @@ const EXERCISES = [
       { label:"Extension, 45\u00b0", reps:20 },
       { label:"Extension, 90\u00b0", reps:20 },
     ]},
-  { id:7, name:"Seated weighted lift", cat:"Strengthening", equip:"weight",
+  { id:7, name:"Seated weighted lift", cat:"Strengthening", equip:"weight", voiceCountdown:true,
     note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:3, phaseGapSec:5,
     phases:[
@@ -725,7 +724,7 @@ function speak(text){
     const u = new SpeechSynthesisUtterance(text);
     u.rate = 1;
     u.pitch = 1;
-    u.volume = 0.75;
+    u.volume = 0.6;
     window.speechSynthesis.speak(u);
   }catch(e){ /* speech synthesis unavailable, the beep still plays */ }
 }
