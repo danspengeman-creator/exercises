@@ -351,10 +351,10 @@ const EXERCISES = [
   { id:1, name:"Seated flexion overpressure", cat:"Flexion", equip:"none", voiceCountdown:true,
     note:"Passive-assisted elbow flexion stretch. Target intensity 5 to 7 out of 10. Can also be done standing, using the wall to push against the back of the hand or wrist for additional overpressure.",
     holdSec:20, restSec:20, reps:20 },
-  { id:2, name:"Lying weighted hang", cat:"Extension", type:"hold", equip:"weight",
+  { id:2, name:"Lying weighted hang", cat:"Extension", type:"hold", equip:"weight", voiceCountdown:true,
     note:"Gravity-assisted passive elbow extension stretch, split into two three-minute holds with a short break in between to readjust. Let the weight hang fully for the entire three minutes each time. Use a 2 to 5 lb weight.",
     holdSegments:[180,180], holdBreakSec:30 },
-  { id:3, name:"Standing weighted extension drop", cat:"Extension", equip:"weight",
+  { id:3, name:"Standing weighted extension drop", cat:"Extension", equip:"weight", voiceCountdown:true,
     note:"Start with the weight held close to the chest, then slowly lower it over about 8 seconds until the arm fully straightens, working extension rather than flexion. Hold at the bottom, then take the weight out of the hand, bring the hand back up to the chest, and place the weight back in before the next rep.",
     holdStages:[ { sec:8, label:"Slowly release" }, { sec:5, label:"Hold at bottom" } ],
     restSec:5, reps:10 },
@@ -749,13 +749,11 @@ function runPreCountdown(n, onDone){
   let count = n;
   num.textContent = count;
   beep(500, 0.12, 0, "triangle");
-  if(current.voiceCountdown) speak(String(count));
   const iv = setInterval(()=>{
     count--;
     if(count > 0){
       num.textContent = count;
       beep(500, 0.12, 0, "triangle");
-      if(current.voiceCountdown) speak(String(count));
     } else {
       clearInterval(iv);
       num.textContent = "Go";
@@ -794,6 +792,7 @@ function beginSession(){
     totalReps,
     holdIdx: 0,
     stageIdx: 0,
+    lastSpokenSec: 0,
     mode: current.type==="hold" ? "hold" : "press",
     timeLeft: current.type==="hold" ? current.holdSegments[0] : (current.holdStages ? current.holdStages[0].sec : current.holdSec),
     paused: false,
@@ -962,6 +961,13 @@ function tick(now){
   if(session.timeLeft <= 0){
     advanceState();
   } else {
+    if(current.voiceCountdown && (session.mode==="press" || session.mode==="rest" || session.mode==="hold")){
+      const secsLeft = Math.ceil(session.timeLeft);
+      if(secsLeft !== session.lastSpokenSec){
+        session.lastSpokenSec = secsLeft;
+        if(secsLeft >= 1 && secsLeft <= 3) speak(String(secsLeft));
+      }
+    }
     render();
     rafId = requestAnimationFrame(tick);
   }
