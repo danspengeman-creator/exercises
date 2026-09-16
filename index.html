@@ -348,7 +348,7 @@
 // type: "reps" (press/rest cycles) or "hold" (single sustained hold, no reps)
 // phases: for multi-direction exercises, an array of {label, reps}; otherwise a single implicit phase
 const EXERCISES = [
-  { id:1, name:"Seated flexion overpressure", cat:"Flexion", equip:"none",
+  { id:1, name:"Seated flexion overpressure", cat:"Flexion", equip:"none", voiceCountdown:true,
     note:"Passive-assisted elbow flexion stretch. Target intensity 5 to 7 out of 10. Can also be done standing, using the wall to push against the back of the hand or wrist for additional overpressure.",
     holdSec:20, restSec:20, reps:20 },
   { id:2, name:"Lying weighted hang", cat:"Extension", type:"hold", equip:"weight",
@@ -364,9 +364,15 @@ const EXERCISES = [
   { id:5, name:"Side-lying external rotation", cat:"Strengthening", equip:"weight",
     note:"Sidelying shoulder external rotation with weight. Continuous motion, about 3 seconds up and 3 seconds down.",
     holdSec:3, restSec:1, reps:30 },
-  { id:6, name:"45-degree shoulder lift", cat:"Strengthening", equip:"weight",
-    note:"Scaption, shoulder elevation in the scapular plane to eye level, 3 lb weight.",
-    holdSec:5, restSec:3, reps:24 },
+  { id:6, name:"Standing extension and flexion", cat:"Flexion/Extension", equip:"none",
+    note:"Self-resistance against the wrist, done at two starting angles. For flexion, push down on the wrist and try to bring the arm up. For extension, push up on the wrist with resistance and let it release back down. A longer rest kicks in when switching to the next phase.",
+    holdSec:5, restSec:2, phaseGapSec:5,
+    phases:[
+      { label:"Flexion, 45\u00b0", reps:20 },
+      { label:"Flexion, 90\u00b0", reps:20 },
+      { label:"Extension, 45\u00b0", reps:20 },
+      { label:"Extension, 90\u00b0", reps:20 },
+    ]},
   { id:7, name:"Seated weighted lift", cat:"Strengthening", equip:"weight",
     note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:3, phaseGapSec:5,
@@ -712,6 +718,18 @@ function startExercise(){
   runPreCountdown(3, ()=>{ beginSession(); });
 }
 
+function speak(text){
+  if(!soundOn) return;
+  if(!("speechSynthesis" in window)) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.05;
+    u.volume = 1;
+    window.speechSynthesis.speak(u);
+  }catch(e){ /* speech synthesis unavailable, the beep still plays */ }
+}
+
 function runPreCountdown(n, onDone){
   const dial = document.getElementById("run-dial");
   const num = document.getElementById("run-num");
@@ -731,11 +749,13 @@ function runPreCountdown(n, onDone){
   let count = n;
   num.textContent = count;
   beep(500, 0.12, 0, "triangle");
+  if(current.voiceCountdown) speak(String(count));
   const iv = setInterval(()=>{
     count--;
     if(count > 0){
       num.textContent = count;
       beep(500, 0.12, 0, "triangle");
+      if(current.voiceCountdown) speak(String(count));
     } else {
       clearInterval(iv);
       num.textContent = "Go";
