@@ -83,6 +83,25 @@
     .verdict-printed{display:block !important;color:#111;border-top:1px dashed #999;padding-top:8px;}
   }
 
+  .suggest-additional-section{border-top:1px solid var(--line);margin-top:18px;padding-top:18px;}
+  .suggest-additional-section h3{font-family:'Fraunces',serif;font-size:19px;color:var(--text);margin-bottom:10px;}
+  .suggestion-entry{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;}
+  .suggestion-entry textarea{flex:1;}
+  .suggestion-remove{
+    background:none;border:1px solid var(--line);color:var(--sub);border-radius:8px;
+    min-width:38px;min-height:38px;cursor:pointer;font-size:16px;touch-action:manipulation;
+  }
+  .suggestion-remove:hover{border-color:#e2615a;color:#e2615a;}
+  .suggest-additional-btn{color:#e8c94a;border-color:#e8c94a;max-width:none;}
+  .suggest-additional-btn:hover{background:rgba(232,201,74,0.1);}
+
+  @media print{
+    .suggest-additional-btn{display:none !important;}
+    .suggestion-entry textarea, .suggestion-remove{display:none;}
+    .suggestion-printed{display:block !important;color:#111;margin-bottom:6px;}
+  }
+  .suggestion-printed{display:none;}
+
   @media print{
     body{background:#fff;color:#111;}
     .back, .header-btn-row, .summary-header button, .rotate-blocker{display:none !important;}
@@ -349,6 +368,11 @@
       <div class="summary-sub">For review with physical therapist. Name, description, equipment, and current reps/hold/rest for each exercise. Use "Copy for email" to paste the whole list, including any feedback marked below, into an email, since feedback only saves on whichever device fills it in.</div>
       <div class="summary-sub" id="summary-total" style="color:var(--press);font-weight:600;"></div>
       <div id="summary-list"></div>
+      <div class="suggest-additional-section">
+        <h3>Suggest an additional exercise</h3>
+        <div id="additional-list"></div>
+        <button class="ctrl-btn suggest-additional-btn" onclick="addSuggestionField()">+ Suggest additional</button>
+      </div>
     </div>
   </div>
 
@@ -703,6 +727,51 @@ function setVerdictNote(id, text){
 }
 loadPtFeedback();
 
+// ---- PT: suggest additional exercise ----
+let additionalSuggestions = [];
+function loadAdditionalSuggestions(){
+  try{
+    const raw = localStorage.getItem("pt-timer-suggestions");
+    additionalSuggestions = raw ? JSON.parse(raw) : [];
+  }catch(e){ additionalSuggestions = []; }
+}
+function saveAdditionalSuggestions(){
+  try{ localStorage.setItem("pt-timer-suggestions", JSON.stringify(additionalSuggestions)); }
+  catch(e){ /* storage unavailable, suggestions just won't persist across reloads */ }
+}
+loadAdditionalSuggestions();
+
+function addSuggestionField(){
+  additionalSuggestions.push("");
+  saveAdditionalSuggestions();
+  renderAdditionalSuggestions();
+}
+function updateSuggestion(idx, text){
+  additionalSuggestions[idx] = text;
+  saveAdditionalSuggestions();
+}
+function removeSuggestion(idx){
+  additionalSuggestions.splice(idx, 1);
+  saveAdditionalSuggestions();
+  renderAdditionalSuggestions();
+}
+function renderAdditionalSuggestions(){
+  const wrap = document.getElementById("additional-list");
+  if(!wrap) return;
+  if(additionalSuggestions.length === 0){
+    wrap.innerHTML = `<div class="sr-note" style="margin-bottom:10px;">None yet. Tap the button below to add one.</div>`;
+    return;
+  }
+  wrap.innerHTML = additionalSuggestions.map((text, idx)=>`
+    <div class="suggestion-entry">
+      <textarea class="verdict-note" rows="2" placeholder="Describe the exercise to consider adding"
+        onchange="updateSuggestion(${idx}, this.value)">${text}</textarea>
+      <button class="suggestion-remove" onclick="removeSuggestion(${idx})" title="Remove">&times;</button>
+    </div>
+    <div class="suggestion-printed">${text ? text : "(blank)"}</div>
+  `).join("");
+}
+
 function buildSummaryText(){
   const lines = [];
   lines.push("Elbow PT Timer — Exercise Summary");
@@ -721,6 +790,12 @@ function buildSummaryText(){
     lines.push(`PT feedback: ${verdictLabel}${fb.note ? " — " + fb.note : ""}`);
     lines.push("");
   });
+  const nonEmptySuggestions = additionalSuggestions.filter(s => s && s.trim());
+  if(nonEmptySuggestions.length){
+    lines.push("Suggested additional exercises:");
+    nonEmptySuggestions.forEach(s => lines.push(`- ${s}`));
+    lines.push("");
+  }
   return lines.join("\n");
 }
 
@@ -760,6 +835,7 @@ function emailSummary(){
 
 function openSummary(){
   renderSummary();
+  renderAdditionalSuggestions();
   showScreen("screen-summary");
   window.scrollTo({top:0, behavior:"smooth"});
 }
