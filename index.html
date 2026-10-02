@@ -83,8 +83,9 @@
     .verdict-printed{display:block !important;color:#111;border-top:1px dashed #999;padding-top:8px;}
   }
 
-  .suggest-additional-section{border-top:1px solid var(--line);margin-top:18px;padding-top:18px;}
+  .suggest-additional-section{border-top:1px solid var(--line);margin-top:18px;padding-top:18px;text-align:center;}
   .suggest-additional-section h3{font-family:'Fraunces',serif;font-size:19px;color:var(--text);margin-bottom:10px;}
+  .suggest-additional-section .suggestion-entry{text-align:left;}
   .suggestion-entry{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;}
   .suggestion-entry textarea{flex:1;}
   .suggestion-remove{
@@ -95,6 +96,22 @@
   .suggest-additional-btn{color:#e8c94a;border-color:#e8c94a;max-width:none;}
   .suggest-additional-btn:hover{background:rgba(232,201,74,0.1);}
 
+  .copy-popup-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:10000;
+    align-items:center;justify-content:center;padding:24px;
+  }
+  .copy-popup-overlay.active{display:flex;}
+  .copy-popup{
+    background:var(--card);border:1px solid var(--done);border-radius:16px;
+    padding:32px 24px;text-align:center;max-width:320px;width:100%;
+  }
+  .copy-popup-check{
+    width:52px;height:52px;border-radius:50%;background:var(--done);color:#0b2011;
+    font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+  }
+  .copy-popup-title{font-family:'Fraunces',serif;font-size:22px;color:var(--text);margin-bottom:8px;}
+  .copy-popup-sub{color:var(--sub);font-size:14px;line-height:1.5;margin-bottom:20px;}
+
   @media print{
     .suggest-additional-btn{display:none !important;}
     .suggestion-entry textarea, .suggestion-remove{display:none;}
@@ -104,7 +121,7 @@
 
   @media print{
     body{background:#fff;color:#111;}
-    .back, .header-btn-row, .summary-header button, .rotate-blocker{display:none !important;}
+    .back, .header-btn-row, .summary-header button, .rotate-blocker, .copy-popup-overlay{display:none !important;}
     .summary-card{border:none;background:#fff;padding:0;}
     .summary-row{border-top:1px solid #ccc;}
     .summary-row .sr-name{color:#111;}
@@ -361,7 +378,6 @@
         <h2>Exercise Summary</h2>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="ctrl-btn" onclick="copySummaryForEmail()" id="copy-summary-btn">Copy for email</button>
-          <button class="ctrl-btn" onclick="emailSummary()">Email</button>
           <button class="ctrl-btn" onclick="window.print()">Print</button>
         </div>
       </div>
@@ -438,6 +454,14 @@
 
 </div>
 
+<div class="copy-popup-overlay" id="copy-popup-overlay" onclick="closeCopyPopup(event)">
+  <div class="copy-popup">
+    <div class="copy-popup-check">&#10003;</div>
+    <div class="copy-popup-title">Copied to clipboard</div>
+    <div class="copy-popup-sub">Paste it into an email with Ctrl+V (or right-click &rarr; Paste) to send it along.</div>
+    <button class="ctrl-btn primary" onclick="closeCopyPopup()">Done</button>
+  </div>
+</div>
 
 <script>
 // ---- Exercise data ----
@@ -801,7 +825,6 @@ function buildSummaryText(){
 
 async function copySummaryForEmail(){
   const text = buildSummaryText();
-  const btn = document.getElementById("copy-summary-btn");
   try{
     if(navigator.clipboard && navigator.clipboard.writeText){
       await navigator.clipboard.writeText(text);
@@ -816,21 +839,14 @@ async function copySummaryForEmail(){
       document.execCommand("copy");
       ta.remove();
     }
-    if(btn){
-      const original = btn.textContent;
-      btn.textContent = "Copied!";
-      setTimeout(()=>{ btn.textContent = original; }, 1800);
-    }
+    document.getElementById("copy-popup-overlay").classList.add("active");
   }catch(e){
     alert("Couldn't copy automatically. Select and copy the summary text manually.");
   }
 }
-
-function emailSummary(){
-  const text = buildSummaryText();
-  const subject = encodeURIComponent("Elbow PT Exercise Summary");
-  const body = encodeURIComponent(text);
-  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+function closeCopyPopup(e){
+  if(e && e.target !== e.currentTarget) return; // ignore clicks inside the card, only overlay/Done closes it
+  document.getElementById("copy-popup-overlay").classList.remove("active");
 }
 
 function openSummary(){
