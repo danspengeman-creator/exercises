@@ -44,6 +44,56 @@
     cursor:pointer;min-height:44px;touch-action:manipulation;
   }
   .reset-all-btn:hover{color:var(--text);border-color:#3a4048;}
+  .header-btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .header-btn-row .reset-all-btn{margin-top:0;}
+  .header-btn-row .pt-summary-btn{color:#e8c94a;border-color:#e8c94a;}
+  .header-btn-row .pt-summary-btn:hover{background:rgba(232,201,74,0.1);}
+
+  .summary-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 18px;}
+  .summary-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .summary-header h2{font-size:26px;}
+  .summary-sub{color:var(--sub);font-size:14px;margin-top:8px;margin-bottom:18px;line-height:1.5;}
+  .summary-row{border-top:1px solid var(--line);padding:14px 0;}
+  .summary-row:first-child{border-top:none;}
+  .summary-row .sr-name{font-family:'Fraunces',serif;font-size:19px;color:var(--text);}
+  .summary-row .sr-badges{margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;}
+  .summary-row .sr-note{color:var(--sub);font-size:14px;margin-top:8px;line-height:1.5;}
+  .summary-row .sr-spec{font-family:'DM Mono',monospace;font-size:14px;color:var(--press);margin-top:6px;}
+  .summary-row .sr-time{font-family:'DM Mono',monospace;font-size:13px;color:var(--rest);margin-top:4px;}
+
+  .verdict-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+  .verdict-btn{
+    padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg);
+    color:var(--sub);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;
+    touch-action:manipulation;transition:all .12s;
+  }
+  .verdict-btn.active.agree{background:var(--done);border-color:var(--done);color:#0b2011;}
+  .verdict-btn.active.remove{background:#e2615a;border-color:#e2615a;color:#2e0b08;}
+  .verdict-btn.active.alternate{background:var(--switch);border-color:var(--switch);color:#1a0d2e;}
+  .verdict-note{
+    width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--line);color:var(--text);
+    font-family:'DM Mono',monospace;font-size:14px;padding:10px 12px;border-radius:8px;
+    min-height:40px;resize:vertical;
+  }
+  .verdict-note:focus{outline:none;border-color:var(--switch);}
+  .verdict-printed{display:none;font-family:'DM Mono',monospace;font-size:13px;margin-top:10px;}
+
+  @media print{
+    .verdict-row, .verdict-note{display:none !important;}
+    .verdict-printed{display:block !important;color:#111;border-top:1px dashed #999;padding-top:8px;}
+  }
+
+  @media print{
+    body{background:#fff;color:#111;}
+    .back, .header-btn-row, .summary-header button, .rotate-blocker{display:none !important;}
+    .summary-card{border:none;background:#fff;padding:0;}
+    .summary-row{border-top:1px solid #ccc;}
+    .summary-row .sr-name{color:#111;}
+    .summary-row .sr-note{color:#333;}
+    .summary-row .sr-spec{color:#333;}
+    .card .equip, .card .cat{color:#333 !important;}
+    #summary-total{color:#111 !important;}
+  }
 
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
   .card{
@@ -77,6 +127,7 @@
   .card .equip.equip-towel{color:var(--switch);}
   .card .equip.equip-none{color:var(--sub);}
   .card .spec{color:var(--sub);font-size:14px;margin-top:10px;line-height:1.5;}
+  .card .spec-time{color:var(--rest);font-size:13px;margin-top:4px;font-family:'DM Mono',monospace;}
 
   /* Setup / run screen */
   .screen{display:none;}
@@ -275,9 +326,30 @@
       <h1>Elbow PT Timer</h1>
       <div class="meta">Pick an exercise. Adjust reps, hold, and rest if needed. Press start.</div>
       <div class="encourage">Make the Spear team proud.</div>
-      <button class="reset-all-btn" onclick="resetAllCompleted()">Reset today's checkmarks</button>
+      <div class="meta" id="program-total"></div>
+      <div class="header-btn-row">
+        <button class="reset-all-btn" onclick="resetAllCompleted()">Reset today's checkmarks</button>
+        <button class="reset-all-btn pt-summary-btn" onclick="openSummary()">View PT summary</button>
+      </div>
     </header>
     <div class="grid" id="exercise-grid"></div>
+  </div>
+
+  <div id="screen-summary" class="screen">
+    <button class="back" onclick="goToList()">&larr; All exercises</button>
+    <div class="summary-card">
+      <div class="summary-header">
+        <h2>Exercise Summary</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="ctrl-btn" onclick="copySummaryForEmail()" id="copy-summary-btn">Copy for email</button>
+          <button class="ctrl-btn" onclick="emailSummary()">Email</button>
+          <button class="ctrl-btn" onclick="window.print()">Print</button>
+        </div>
+      </div>
+      <div class="summary-sub">For review with physical therapist. Name, description, equipment, and current reps/hold/rest for each exercise. Use "Copy for email" to paste the whole list, including any feedback marked below, into an email, since feedback only saves on whichever device fills it in.</div>
+      <div class="summary-sub" id="summary-total" style="color:var(--press);font-weight:600;"></div>
+      <div id="summary-list"></div>
+    </div>
   </div>
 
   <div id="screen-setup" class="screen">
@@ -352,7 +424,7 @@ const EXERCISES = [
     note:"Passive-assisted elbow flexion stretch. Target intensity 5 to 7 out of 10. Can also be done standing, using the wall to push against the back of the hand or wrist for additional overpressure.",
     holdSec:20, restSec:20, reps:20 },
   { id:2, name:"Lying weighted hang", cat:"Extension", type:"hold", equip:"weight", voiceCountdown:true,
-    note:"Gravity-assisted passive elbow extension stretch, split into two three-minute holds with a short break in between to readjust. Let the weight hang fully for the entire three minutes each time. Use a 2 to 5 lb weight.",
+    note:"Gravity-assisted passive elbow extension stretch, split into two three-minute holds with a short break in between to readjust. Let the weight hang fully for the entire three minutes each time. Use an 8 to 10 lb weight.",
     holdSegments:[180,180], holdBreakSec:30 },
   { id:3, name:"Standing weighted extension drop", cat:"Extension", equip:"weight", voiceCountdown:true,
     note:"Start with the weight held close to the chest, then slowly extend the arm straight down over about 15 seconds, holding briefly at full extension at the end.",
@@ -538,6 +610,32 @@ document.addEventListener("visibilitychange", ()=>{
 
 
 // ---- List screen ----
+function estimateSeconds(ex){
+  if(ex.type==="hold"){
+    return ex.holdSegments.reduce((a,b)=>a+b,0) + (ex.holdSegments.length-1)*ex.holdBreakSec;
+  }
+  if(ex.holdStages){
+    const perRep = ex.holdStages.reduce((a,s)=>a+s.sec,0);
+    return ex.reps*perRep + Math.max(0, ex.reps-1)*ex.restSec;
+  }
+  if(ex.phases){
+    let total = 0;
+    ex.phases.forEach(p=>{ total += p.reps*ex.holdSec + Math.max(0, p.reps-1)*ex.restSec; });
+    if(ex.phaseGapSec) total += (ex.phases.length-1)*ex.phaseGapSec;
+    return total;
+  }
+  return ex.reps*ex.holdSec + Math.max(0, ex.reps-1)*ex.restSec;
+}
+function formatDuration(totalSeconds){
+  const s = Math.round(totalSeconds);
+  const m = Math.floor(s/60);
+  const r = s%60;
+  return m > 0 ? `${m}m ${r}s` : `${r}s`;
+}
+function totalProgramSeconds(){
+  return EXERCISES.reduce((a,ex)=>a+estimateSeconds(ex), 0);
+}
+
 function specLine(ex){
   if(ex.type==="hold") return `${ex.holdSegments.length} holds &times; ${Math.round(ex.holdSegments[0]/60)} min, ${ex.holdBreakSec}s break between`;
   if(ex.holdStages) return `${ex.reps} reps, ${ex.holdStages.map(s=>s.sec+"s").join(" + ")} hold, ${ex.restSec}s rest`;
@@ -565,9 +663,12 @@ function renderList(){
       <span class="cat">${ex.cat}</span>
       <span class="equip ${equip.cls}">${equip.text}</span>
       <div class="spec">${specLine(ex)}</div>
+      <div class="spec-time">Est. duration: ~${formatDuration(estimateSeconds(ex))}</div>
     `;
     grid.appendChild(card);
   });
+  const totalEl = document.getElementById("program-total");
+  if(totalEl) totalEl.textContent = `Est. total routine time: ~${formatDuration(totalProgramSeconds())}`;
 }
 renderList();
 
@@ -575,6 +676,130 @@ function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   document.getElementById(id).classList.add("active");
 }
+// ---- PT feedback (agree / remove / alternate) ----
+let ptFeedback = {};
+function loadPtFeedback(){
+  try{
+    const raw = localStorage.getItem("pt-timer-feedback");
+    ptFeedback = raw ? JSON.parse(raw) : {};
+  }catch(e){ ptFeedback = {}; }
+}
+function savePtFeedback(){
+  try{ localStorage.setItem("pt-timer-feedback", JSON.stringify(ptFeedback)); }
+  catch(e){ /* storage unavailable, selections just won't persist across reloads */ }
+}
+function setVerdict(id, verdict){
+  const entry = ptFeedback[id] || {};
+  entry.verdict = (entry.verdict === verdict) ? null : verdict; // tap again to clear
+  ptFeedback[id] = entry;
+  savePtFeedback();
+  renderSummary();
+}
+function setVerdictNote(id, text){
+  const entry = ptFeedback[id] || {};
+  entry.note = text;
+  ptFeedback[id] = entry;
+  savePtFeedback();
+}
+loadPtFeedback();
+
+function buildSummaryText(){
+  const lines = [];
+  lines.push("Elbow PT Timer — Exercise Summary");
+  lines.push(`Est. total routine time: ~${formatDuration(totalProgramSeconds())}`);
+  lines.push("");
+  EXERCISES.forEach(ex=>{
+    const equip = equipLabel(ex.equip);
+    const fb = ptFeedback[ex.id] || {};
+    const verdictLabel = fb.verdict === "agree" ? "Agree, continue"
+      : fb.verdict === "remove" ? "Suggest removal"
+      : fb.verdict === "alternate" ? "Suggest alternate"
+      : "No feedback yet";
+    lines.push(`${ex.name} (${ex.cat}, ${equip.text})`);
+    lines.push(ex.note);
+    lines.push(`${specLine(ex)} — Est. duration: ~${formatDuration(estimateSeconds(ex))}`);
+    lines.push(`PT feedback: ${verdictLabel}${fb.note ? " — " + fb.note : ""}`);
+    lines.push("");
+  });
+  return lines.join("\n");
+}
+
+async function copySummaryForEmail(){
+  const text = buildSummaryText();
+  const btn = document.getElementById("copy-summary-btn");
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    if(btn){
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(()=>{ btn.textContent = original; }, 1800);
+    }
+  }catch(e){
+    alert("Couldn't copy automatically. Select and copy the summary text manually.");
+  }
+}
+
+function emailSummary(){
+  const text = buildSummaryText();
+  const subject = encodeURIComponent("Elbow PT Exercise Summary");
+  const body = encodeURIComponent(text);
+  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+}
+
+function openSummary(){
+  renderSummary();
+  showScreen("screen-summary");
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+function renderSummary(){
+  const wrap = document.getElementById("summary-list");
+  wrap.innerHTML = EXERCISES.map(ex=>{
+    const equip = equipLabel(ex.equip);
+    const fb = ptFeedback[ex.id] || {};
+    const v = fb.verdict || null;
+    const note = fb.note || "";
+    const verdictLabel = v === "agree" ? "Agree, continue"
+      : v === "remove" ? "Suggest removal"
+      : v === "alternate" ? "Suggest alternate"
+      : "No feedback yet";
+    return `
+      <div class="summary-row">
+        <div class="sr-name">${ex.name}</div>
+        <div class="sr-badges">
+          <span class="cat">${ex.cat}</span>
+          <span class="equip ${equip.cls}">${equip.text}</span>
+        </div>
+        <div class="sr-note">${ex.note}</div>
+        <div class="sr-spec">${specLine(ex)}</div>
+        <div class="sr-time">Est. duration: ~${formatDuration(estimateSeconds(ex))}</div>
+        <div class="verdict-row">
+          <button class="verdict-btn agree ${v==='agree'?'active agree':''}" onclick="setVerdict(${ex.id},'agree')">&#10003; Agree, continue</button>
+          <button class="verdict-btn remove ${v==='remove'?'active remove':''}" onclick="setVerdict(${ex.id},'remove')">&#10005; Suggest removal</button>
+          <button class="verdict-btn alternate ${v==='alternate'?'active alternate':''}" onclick="setVerdict(${ex.id},'alternate')">&#8646; Suggest alternate</button>
+        </div>
+        <textarea class="verdict-note" placeholder="Optional note, e.g. what to use instead" rows="2"
+          onchange="setVerdictNote(${ex.id}, this.value)">${note}</textarea>
+        <div class="verdict-printed">PT feedback: ${verdictLabel}${note ? " — " + note : ""}</div>
+      </div>
+    `;
+  }).join("");
+  const totalEl = document.getElementById("summary-total");
+  if(totalEl) totalEl.textContent = `Est. total routine time: ~${formatDuration(totalProgramSeconds())}`;
+}
+
 function goToList(){
   stopLoop();
   if(breakState){
