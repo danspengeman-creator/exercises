@@ -49,34 +49,53 @@
   .header-btn-row .pt-summary-btn{color:#e8c94a;border-color:#e8c94a;}
   .header-btn-row .pt-summary-btn:hover{background:rgba(232,201,74,0.1);}
 
-  .summary-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 18px;}
+  .summary-card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 16px;}
   .summary-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-  .summary-header h2{font-size:26px;}
-  .summary-sub{color:var(--sub);font-size:14px;margin-top:8px;margin-bottom:18px;line-height:1.5;}
-  .summary-row{border-top:1px solid var(--line);padding:14px 0;}
-  .summary-row:first-child{border-top:none;}
-  .summary-row .sr-name{font-family:'Fraunces',serif;font-size:19px;color:var(--text);}
-  .summary-row .sr-badges{margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;}
-  .summary-row .sr-note{color:var(--sub);font-size:14px;margin-top:8px;line-height:1.5;}
-  .summary-row .sr-spec{font-family:'DM Mono',monospace;font-size:14px;color:var(--press);margin-top:6px;}
-  .summary-row .sr-time{font-family:'DM Mono',monospace;font-size:13px;color:var(--rest);margin-top:4px;}
-
-  .verdict-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
-  .verdict-btn{
-    padding:8px 14px;border-radius:20px;border:1px solid var(--line);background:var(--bg);
-    color:var(--sub);font-family:'DM Mono',monospace;font-size:13px;cursor:pointer;
-    touch-action:manipulation;transition:all .12s;
+  .summary-header h2{font-size:28px;}
+  .summary-action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+  .summary-action-btn{flex:1 1 160px;font-size:16px;font-weight:600;padding:16px;min-height:54px;}
+  @media (max-width:420px){
+    .summary-action-btn{flex:1 1 100%;}
   }
-  .verdict-btn.active.agree{background:var(--done);border-color:var(--done);color:#0b2011;}
-  .verdict-btn.active.remove{background:#e2615a;border-color:#e2615a;color:#2e0b08;}
-  .verdict-btn.active.alternate{background:var(--switch);border-color:var(--switch);color:#1a0d2e;}
+  .summary-sub{color:var(--sub);font-size:15px;margin-top:8px;margin-bottom:18px;line-height:1.5;}
+  .summary-row{border-top:1px solid var(--line);padding:20px 0;}
+  .summary-row:first-child{border-top:none;}
+  .summary-row .sr-name{font-family:'Fraunces',serif;font-size:23px;color:var(--text);line-height:1.2;}
+  .summary-row .sr-badges{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
+  .summary-row .sr-badges .cat, .summary-row .sr-badges .equip{font-size:13px;padding:4px 10px;}
+  .summary-row .sr-spec{font-family:'DM Mono',monospace;font-size:16px;color:var(--press);margin-top:12px;}
+  .summary-row .sr-time{font-family:'DM Mono',monospace;font-size:15px;color:var(--rest);margin-top:6px;}
+
+  .sr-details{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+  .sr-details summary{
+    list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:center;
+    justify-content:space-between;color:var(--text);font-size:15px;font-weight:500;
+    touch-action:manipulation;
+  }
+  .sr-details summary::-webkit-details-marker{display:none;}
+  .sr-details summary .chevron{color:var(--sub);transition:transform .15s;font-size:14px;}
+  .sr-details[open] summary .chevron{transform:rotate(180deg);}
+  .sr-details .sr-note{color:var(--sub);font-size:15px;line-height:1.6;padding:0 14px 14px;}
+
+  .verdict-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+  .verdict-btn{
+    flex:1 1 140px;padding:12px 14px;border-radius:10px;border:2px solid var(--line);background:var(--bg);
+    color:var(--sub);font-family:'DM Mono',monospace;font-size:14px;font-weight:600;cursor:pointer;
+    touch-action:manipulation;transition:all .12s;min-height:46px;
+  }
+  .verdict-btn.active.agree{background:var(--done);border-color:var(--done);color:#0b2011;box-shadow:0 3px 0 rgba(0,0,0,0.3);}
+  .verdict-btn.active.remove{background:#e2615a;border-color:#e2615a;color:#2e0b08;box-shadow:0 3px 0 rgba(0,0,0,0.3);}
+  .verdict-btn.active.alternate{background:var(--switch);border-color:var(--switch);color:#1a0d2e;box-shadow:0 3px 0 rgba(0,0,0,0.3);}
   .verdict-note{
-    width:100%;margin-top:8px;background:var(--bg);border:1px solid var(--line);color:var(--text);
-    font-family:'DM Mono',monospace;font-size:14px;padding:10px 12px;border-radius:8px;
-    min-height:40px;resize:vertical;
+    width:100%;margin-top:10px;background:var(--bg);border:1px solid var(--line);color:var(--text);
+    font-family:'DM Mono',monospace;font-size:15px;padding:12px 14px;border-radius:8px;
+    min-height:46px;resize:vertical;
   }
   .verdict-note:focus{outline:none;border-color:var(--switch);}
   .verdict-printed{display:none;font-family:'DM Mono',monospace;font-size:13px;margin-top:10px;}
+  @media (max-width:420px){
+    .verdict-btn{flex:1 1 100%;}
+  }
 
   @media print{
     .verdict-row, .verdict-note{display:none !important;}
@@ -127,6 +146,9 @@
     .summary-row .sr-name{color:#111;}
     .summary-row .sr-note{color:#333;}
     .summary-row .sr-spec{color:#333;}
+    .sr-details{border:none !important;}
+    .sr-details summary{display:none !important;}
+    .sr-details .sr-note{display:block !important;color:#333 !important;padding:0 !important;}
     .card .equip, .card .cat{color:#333 !important;}
     #summary-total{color:#111 !important;}
   }
@@ -376,10 +398,10 @@
     <div class="summary-card">
       <div class="summary-header">
         <h2>Exercise Summary</h2>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="ctrl-btn primary" onclick="copySummaryForEmail()" id="copy-summary-btn">Copy for email</button>
-          <button class="ctrl-btn primary" onclick="window.print()">Print</button>
-        </div>
+      </div>
+      <div class="summary-action-row">
+        <button class="ctrl-btn primary summary-action-btn" onclick="copySummaryForEmail()" id="copy-summary-btn">Copy for email</button>
+        <button class="ctrl-btn primary summary-action-btn" onclick="window.print()">Print</button>
       </div>
       <div class="summary-sub">For review with physical therapist. Name, description, equipment, and current reps/hold/rest for each exercise. Use "Copy for email" to paste the whole list, including any feedback marked below, into an email, since feedback only saves on whichever device fills it in.</div>
       <div class="summary-sub" id="summary-total" style="color:var(--press);font-weight:600;"></div>
@@ -507,7 +529,7 @@ const EXERCISES = [
     holdSec:3, restSec:3, reps:20 },
   { id:10, name:"Resistance band triceps kickback", cat:"Extension", equip:"band",
     note:"Anchor the band low, near ankle height. Hinge forward slightly at the hips, pin the elbow against the side at about 90 degrees, then straighten the arm back until fully extended. Hold at the top, then return to 90 degrees.",
-    holdSec:3, restSec:2, reps:20 },
+    holdSec:5, restSec:2, reps:20 },
   { id:11, name:"Standing chop", cat:"Functional", equip:"none",
     note:"Standing preferred, chopping motion with the hand, up and down.",
     holdStages:[ { sec:3, label:"Chop up" }, { sec:3, label:"Chop down" } ],
@@ -874,7 +896,10 @@ function renderSummary(){
           <span class="cat">${ex.cat}</span>
           <span class="equip ${equip.cls}">${equip.text}</span>
         </div>
-        <div class="sr-note">${ex.note}</div>
+        <details class="sr-details">
+          <summary>Description <span class="chevron">&#9662;</span></summary>
+          <div class="sr-note">${ex.note}</div>
+        </details>
         <div class="sr-spec">${specLine(ex)}</div>
         <div class="sr-time">Est. duration: ~${formatDuration(estimateSeconds(ex))}</div>
         <div class="verdict-row">
