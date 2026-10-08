@@ -502,17 +502,24 @@ const EXERCISES = [
   { id:4, name:"Standing table push extension", cat:"Extension", equip:"none",
     note:"Stand with hands on a table at a slight angle, holding yourself up, then push outward through both arms and shoulders to straighten the arms as much as possible.",
     holdSec:5, restSec:3, reps:20 },
-  { id:5, name:"Elbow distraction stretch", cat:"Flexion", equip:"towel", voiceCountdown:true,
+  { id:5, name:"Standing wall push", cat:"Extension", equip:"none",
+    note:"Stand back from a wall and push through both arms to straighten them as much as possible. Keep the elbows pointing down toward the floor, not out to the sides, so the triceps do the work. Push into the wall, hold, then push away from the wall.",
+    holdSec:3, restSec:2, reps:20 },
+  { id:6, name:"Elbow distraction stretch", cat:"Flexion", equip:"towel", voiceCountdown:true,
     note:"Similar to seated flexion overpressure, but with a rolled towel or small pillow placed in the fold of the elbow to add distraction.",
-    holdSec:20, restSec:20, reps:20 },
-  { id:6, name:"Standing extension and flexion", cat:"Flexion/Extension", equip:"none", voiceCountdown:true,
+    holdSec:20, restSec:10, reps:20 },
+  { id:7, name:"Standing extension and flexion", cat:"Flexion/Extension", equip:"none", voiceCountdown:true,
     note:"Self-resistance against the wrist. For flexion, push down on the wrist and try to bring the arm up. For extension, push up on the wrist with resistance and let it release back down. A longer rest kicks in when switching to the next phase.",
     holdSec:8, restSec:2, phaseGapSec:5,
     phases:[
       { label:"Flexion", reps:20 },
       { label:"Extension", reps:20 },
     ]},
-  { id:7, name:"Seated weighted lift", cat:"Strengthening", equip:"weight",
+  { id:8, name:"Scarecrow rotation stretch", cat:"Rotation", equip:"none",
+    note:"Stand with both arms straight out to the sides like a scarecrow. One palm faces down (pronated) and the other faces up (supinated). Stretch the arms as far out from the body as they can go, hold, then turn both hands to the opposite positions and hold again. No rest between holds.",
+    holdStages:[ { sec:5, label:"Left palm down, right palm up" }, { sec:5, label:"Left palm up, right palm down" } ],
+    restSec:0, reps:20 },
+  { id:9, name:"Seated weighted lift", cat:"Strengthening", equip:"weight",
     note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:3, phaseGapSec:5,
     phases:[
@@ -520,28 +527,28 @@ const EXERCISES = [
       { label:"Sideways", reps:24 },
       { label:"Downward", reps:24 },
     ]},
-  { id:8, name:"Pronation-supination weight turn", cat:"Rotation", equip:"weight",
+  { id:10, name:"Pronation-supination weight turn", cat:"Rotation", equip:"weight",
     note:"Hold a weight with the arm straight, starting turned left, then rotate to the right and back, holding at each side.",
     holdStages:[ { sec:5, label:"Turn left" }, { sec:5, label:"Turn right" } ],
     restSec:3, reps:20 },
-  { id:9, name:"Resistance band side step (Mario jump)", cat:"Strengthening", equip:"band",
-    note:"Elastic resistance side step to the right with a 90-degree punch up on the out motion.",
-    holdSec:3, restSec:3, reps:20 },
-  { id:10, name:"Resistance band triceps kickback", cat:"Extension", equip:"band",
+  { id:11, name:"Resistance band triceps kickback", cat:"Extension", equip:"band",
     note:"Anchor the band low, near ankle height. Hinge forward slightly at the hips, pin the elbow against the side at about 90 degrees, then straighten the arm back until fully extended. Hold at the top, then return to 90 degrees.",
     holdSec:5, restSec:2, reps:20 },
-  { id:11, name:"Standing chop", cat:"Functional", equip:"none",
+  { id:12, name:"Resistance band triceps pulldown", cat:"Extension", equip:"band",
+    note:"Hold the band from above, similar to the kickback. Start with the elbow bent at 90 degrees and pull the band down until the arm is as straight as possible. Hold at the bottom, then return to 90 degrees.",
+    holdSec:5, restSec:3, reps:20 },
+  { id:13, name:"Standing chop", cat:"Functional", equip:"none",
     note:"Standing preferred, chopping motion with the hand, up and down.",
     holdStages:[ { sec:3, label:"Chop up" }, { sec:3, label:"Chop down" } ],
     restSec:2, reps:20 },
-  { id:12, name:"Towel pull", cat:"Strengthening", equip:"towel",
+  { id:14, name:"Towel pull", cat:"Strengthening", equip:"towel",
     note:"Pulling a towel with the hand, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:3, restSec:2, phaseGapSec:5,
     phases:[
       { label:"Pulling outward", reps:24 },
       { label:"Pulling inward", reps:24 },
     ]},
-  { id:13, name:"Ulnar nerve glide", cat:"Nerve", equip:"none",
+  { id:15, name:"Ulnar nerve glide", cat:"Nerve", equip:"none",
     note:"Like tossing a Q-tip away. Start with the hand pinched at the thumb and pointer finger as close to the ear as possible, hold, then sweep it out and away to the side, as if flicking a Q-tip off to the side, and hold there too.",
     holdStages:[ { sec:5, label:"Near ear" }, { sec:3, label:"Away from ear" } ],
     restSec:3, reps:10 },
@@ -702,8 +709,9 @@ function formatDuration(totalSeconds){
   const r = s%60;
   return m > 0 ? `${m}m ${r}s` : `${r}s`;
 }
+const TRANSITION_SEC = 60; // setup/equipment change between exercises
 function totalProgramSeconds(){
-  return EXERCISES.reduce((a,ex)=>a+estimateSeconds(ex), 0);
+  return EXERCISES.reduce((a,ex)=>a+estimateSeconds(ex), 0) + Math.max(0,EXERCISES.length-1)*TRANSITION_SEC;
 }
 
 function specLine(ex){
@@ -738,7 +746,7 @@ function renderList(){
     grid.appendChild(card);
   });
   const totalEl = document.getElementById("program-total");
-  if(totalEl) totalEl.textContent = `Est. total routine time: ~${formatDuration(totalProgramSeconds())}`;
+  if(totalEl) totalEl.textContent = `Est. total routine time: ~${formatDuration(totalProgramSeconds())} (includes 1 min between exercises)`;
 }
 renderList();
 
@@ -821,7 +829,7 @@ function renderAdditionalSuggestions(){
 function buildSummaryText(){
   const lines = [];
   lines.push("Elbow PT Timer — Exercise Summary");
-  lines.push(`Est. total routine time: ~${formatDuration(totalProgramSeconds())}`);
+  lines.push(`Est. total routine time: ~${formatDuration(totalProgramSeconds())} (includes 1 min between exercises)`);
   lines.push("");
   EXERCISES.forEach(ex=>{
     const equip = equipLabel(ex.equip);
@@ -914,7 +922,7 @@ function renderSummary(){
     `;
   }).join("");
   const totalEl = document.getElementById("summary-total");
-  if(totalEl) totalEl.textContent = `Est. total routine time: ~${formatDuration(totalProgramSeconds())}`;
+  if(totalEl) totalEl.textContent = `Est. total routine time: ~${formatDuration(totalProgramSeconds())} (includes 1 min between exercises)`;
 }
 
 function goToList(){
@@ -1318,7 +1326,7 @@ function tick(now){
   if(session.timeLeft <= 0){
     advanceState();
   } else {
-    if(current.voiceCountdown && (session.mode==="press" || session.mode==="rest" || session.mode==="hold")){
+    if(current.voiceCountdown && (session.mode==="press" || session.mode==="rest" || session.mode==="hold" || session.mode==="holdbreak")){
       const secsLeft = Math.ceil(session.timeLeft);
       if(secsLeft !== session.lastSpokenSec){
         session.lastSpokenSec = secsLeft;
@@ -1386,6 +1394,11 @@ function advanceState(){
     const isPhaseBoundary = session.repInPhase >= phaseNow.reps && session.phaseIdx < session.phases.length - 1;
     session.timeLeft = (isPhaseBoundary && current.phaseGapSec) ? current.phaseGapSec : current.restSec;
     session.isPhaseGapRest = isPhaseBoundary && !!current.phaseGapSec;
+    if(session.timeLeft <= 0){
+      // no rest between holds: roll straight into the next one
+      session.isPhaseGapRest = false;
+      return advanceState();
+    }
     playCue(session.isPhaseGapRest ? "switchdir" : "rest");
   } else {
     // rest finished, check if phase is done -> move to next phase
