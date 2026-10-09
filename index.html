@@ -37,6 +37,7 @@
   header .eyebrow{color:var(--sub);font-size:13px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px;}
   header h1{font-size:40px;line-height:1.1;}
   header .meta{color:var(--sub);font-size:14px;margin-top:8px;}
+  header .meta.remaining-time{color:var(--rest);font-weight:700;font-size:16px;}
   header .encourage{font-family:'Fraunces',serif;font-size:19px;color:var(--press);margin-top:14px;font-style:italic;}
   .reset-all-btn{
     margin-top:16px;padding:10px 16px;border-radius:8px;border:1px solid var(--line);
@@ -385,6 +386,7 @@
       <div class="meta">Pick an exercise. Adjust reps, hold, and rest if needed. Press start.</div>
       <div class="encourage">Make the Spear team proud.</div>
       <div class="meta" id="program-total"></div>
+      <div class="meta remaining-time" id="program-remaining"></div>
       <div class="header-btn-row">
         <button class="reset-all-btn" onclick="resetAllCompleted()">Reset today's checkmarks</button>
         <button class="reset-all-btn pt-summary-btn" onclick="openSummary()">View PT summary</button>
@@ -747,6 +749,14 @@ function renderList(){
   });
   const totalEl = document.getElementById("program-total");
   if(totalEl) totalEl.textContent = `Est. total routine time: ~${formatDuration(totalProgramSeconds())} (includes 1 min between exercises)`;
+  const remEl = document.getElementById("program-remaining");
+  if(remEl){
+    const remSec = EXERCISES.reduce((a,ex)=>a + (completedMap[ex.id] ? 0 : estimateSeconds(ex)), 0);
+    const remMin = Math.ceil(remSec/60);
+    remEl.textContent = remMin > 0
+      ? `Est. time remaining: ~${remMin} min (exercise time only, estimate for the exercises not yet completed)`
+      : `All exercises completed for today`;
+  }
 }
 renderList();
 
