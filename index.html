@@ -751,10 +751,12 @@ function renderList(){
   if(totalEl) totalEl.textContent = `Est. total routine time: ~${formatDuration(totalProgramSeconds())} (includes 1 min between exercises)`;
   const remEl = document.getElementById("program-remaining");
   if(remEl){
-    const remSec = EXERCISES.reduce((a,ex)=>a + (completedMap[ex.id] ? 0 : estimateSeconds(ex)), 0);
+    const left = EXERCISES.filter(ex=>!completedMap[ex.id]);
+    // hold + rest time of every exercise still to do (1 min changes are NOT included)
+    const remSec = left.reduce((a,ex)=>a + estimateSeconds(ex), 0);
     const remMin = Math.ceil(remSec/60);
     remEl.textContent = remMin > 0
-      ? `Est. time remaining: ~${remMin} min (exercise time only, estimate for the exercises not yet completed)`
+      ? `Est. time remaining: ~${remMin} min (${left.length} exercise${left.length===1?"":"s"} left, holds and rests only, no 1 min changes)`
       : `All exercises completed for today`;
   }
 }
