@@ -248,6 +248,9 @@
   .dial.mode-rest{border-color:var(--rest);}
   .dial.mode-done{border-color:var(--done);}
   .dial .num{font-family:'Fraunces',serif;font-size:min(120px,26vw);font-weight:600;line-height:1;}
+  .dial .dir-arrow{position:absolute;top:3%;left:50%;width:min(96px,25vw);height:min(96px,25vw);transform:translateX(-50%);display:none;pointer-events:none;}
+  .dial .dir-arrow svg{width:100%;height:100%;overflow:visible;}
+  .dial .dir-arrow.dim{opacity:.35;}
   .dial .unit{position:absolute;bottom:24%;font-size:13px;color:var(--sub);letter-spacing:.1em;text-transform:uppercase;}
 
   .switch{ /* namespace anchor, unused */ }
@@ -442,6 +445,7 @@
         <div class="state-word" id="run-state"></div>
         <div class="dial" id="run-dial">
           <div class="confetti" id="confetti"></div>
+          <div class="dir-arrow" id="dir-arrow"></div>
           <div class="num" id="run-num">0</div>
           <div class="unit">sec</div>
         </div>
@@ -521,7 +525,7 @@ const EXERCISES = [
     note:"Stand with both arms straight out to the sides like a scarecrow. One palm faces down (pronated) and the other faces up (supinated). Stretch the arms as far out from the body as they can go, hold, then turn both hands to the opposite positions and hold again. No rest between holds.",
     holdStages:[ { sec:5, label:"Left palm down, right palm up" }, { sec:5, label:"Left palm up, right palm down" } ],
     restSec:0, reps:20 },
-  { id:9, name:"Seated weighted lift", cat:"Strengthening", equip:"weight",
+  { id:9, name:"Seated weighted lift", dirArrows:true, cat:"Strengthening", equip:"weight",
     note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:3, phaseGapSec:5,
     phases:[
@@ -529,7 +533,7 @@ const EXERCISES = [
       { label:"Sideways", reps:24 },
       { label:"Downward", reps:24 },
     ]},
-  { id:10, name:"Pronation-supination weight turn", cat:"Rotation", equip:"weight",
+  { id:10, name:"Pronation-supination weight turn", dirArrows:true, cat:"Rotation", equip:"weight",
     note:"Hold a weight with the arm straight, starting turned left, then rotate to the right and back, holding at each side.",
     holdStages:[ { sec:5, label:"Turn left" }, { sec:5, label:"Turn right" } ],
     restSec:3, reps:20 },
@@ -539,7 +543,7 @@ const EXERCISES = [
   { id:12, name:"Resistance band triceps pulldown", cat:"Extension", equip:"band",
     note:"Hold the band from above, similar to the kickback. Start with the elbow bent at 90 degrees and pull the band down until the arm is as straight as possible. Hold at the bottom, then return to 90 degrees.",
     holdSec:5, restSec:3, reps:20 },
-  { id:13, name:"Standing chop", cat:"Functional", equip:"none",
+  { id:13, name:"Standing chop", dirArrows:true, cat:"Functional", equip:"none",
     note:"Standing preferred, chopping motion with the hand, up and down.",
     holdStages:[ { sec:3, label:"Chop up" }, { sec:3, label:"Chop down" } ],
     restSec:2, reps:20 },
@@ -1444,6 +1448,7 @@ function render(){
   const repCounter = document.getElementById("run-rep");
 
   dial.classList.remove("mode-press","mode-rest","mode-done");
+  updateDirArrow(false);
 
   if(session.finished){
     dial.classList.add("mode-done");
@@ -1544,6 +1549,45 @@ function render(){
   const phaseNow = session.phases[session.phaseIdx];
   const repShown = Math.min(session.repInPhase+1, phaseNow.reps);
   repCounter.innerHTML = `Rep <span>${repShown}</span> of <span>${phaseNow.reps}</span>`;
+  updateDirArrow(true);
+}
+
+// ---- Direction arrow inside the dial ----
+const ARROW_COLOR = "#ffe14d";
+function arrowSvg(dir){
+  const c = ARROW_COLOR, w = 15;
+  const common = `fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"`;
+  if(dir === "side"){
+    return `<svg viewBox="0 0 100 100"><path d="M12 50 H88 M34 26 L12 50 L34 74 M66 26 L88 50 L66 74" ${common}/></svg>`;
+  }
+  const rot = { up:0, right:90, down:180, left:270 }[dir];
+  return `<svg viewBox="0 0 100 100"><g transform="rotate(${rot} 50 50)"><path d="M50 88 V14 M22 42 L50 14 L78 42" ${common}/></g></svg>`;
+}
+function dirFromLabel(label){
+  const t = (label||"").toLowerCase();
+  if(/sideways/.test(t)) return "side";
+  if(/\bup/.test(t)) return "up";
+  if(/\bdown/.test(t)) return "down";
+  if(/\bleft/.test(t)) return "left";
+  if(/\bright/.test(t)) return "right";
+  return null;
+}
+function updateDirArrow(show){
+  const el = document.getElementById("dir-arrow");
+  if(!el) return;
+  if(!show || !current || !current.dirArrows || session.finished){ el.style.display = "none"; return; }
+  // while pressing show the current direction; while resting preview the next one (dimmed)
+  let label;
+  if(current.holdStages){
+    label = session.mode === "press" ? current.holdStages[session.stageIdx].label : current.holdStages[0].label;
+  } else {
+    label = currentPhaseLabel();
+  }
+  const dir = dirFromLabel(label);
+  if(!dir){ el.style.display = "none"; return; }
+  if(el.dataset.dir !== dir){ el.innerHTML = arrowSvg(dir); el.dataset.dir = dir; }
+  el.classList.toggle("dim", session.mode !== "press");
+  el.style.display = "block";
 }
 
 // ---- Sound cues ----
