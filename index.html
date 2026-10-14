@@ -132,6 +132,11 @@
   .copy-popup-title{font-family:'Fraunces',serif;font-size:22px;color:var(--text);margin-bottom:8px;}
   .copy-popup-sub{color:var(--sub);font-size:14px;line-height:1.5;margin-bottom:20px;}
 
+  .confirm-popup{border-color:#e2615a;}
+  .confirm-btn-row{display:flex;gap:10px;}
+  .confirm-btn-row .ctrl-btn{flex:1;}
+  .ctrl-btn.danger{background:#e2615a;border-color:#e2615a;color:#1a0b0a;}
+
   @media print{
     .suggest-additional-btn{display:none !important;}
     .suggestion-entry textarea, .suggestion-remove{display:none;}
@@ -141,7 +146,7 @@
 
   @media print{
     body{background:#fff;color:#111;}
-    .back, .header-btn-row, .summary-header button, .rotate-blocker, .copy-popup-overlay{display:none !important;}
+    .back, .header-btn-row, .summary-header button, .rotate-blocker, .copy-popup-overlay, .confirm-overlay{display:none !important;}
     .summary-card{border:none;background:#fff;padding:0;}
     .summary-row{border-top:1px solid #ccc;}
     .summary-row .sr-name{color:#111;}
@@ -491,6 +496,17 @@
   </div>
 </div>
 
+<div class="copy-popup-overlay confirm-overlay" id="reset-confirm-overlay" onclick="closeResetConfirm(event)">
+  <div class="copy-popup confirm-popup">
+    <div class="copy-popup-title">Reset today's checkmarks?</div>
+    <div class="copy-popup-sub">This clears every completed exercise for today. It can't be undone.</div>
+    <div class="confirm-btn-row">
+      <button class="ctrl-btn" onclick="closeResetConfirm()">Cancel</button>
+      <button class="ctrl-btn danger" onclick="confirmResetAll()">Yes, reset</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ---- Exercise data ----
 // type: "reps" (press/rest cycles) or "hold" (single sustained hold, no reps)
@@ -679,10 +695,17 @@ function unmarkComplete(id){
   renderList();
 }
 function resetAllCompleted(){
-  if(!confirm("Clear all checkmarks for today?")) return;
+  document.getElementById("reset-confirm-overlay").classList.add("active");
+}
+function closeResetConfirm(e){
+  if(e && e.target !== e.currentTarget) return; // only the dimmed background or Cancel closes it
+  document.getElementById("reset-confirm-overlay").classList.remove("active");
+}
+function confirmResetAll(){
   completedMap = {};
   saveCompleted();
   renderList();
+  closeResetConfirm();
 }
 loadCompleted();
 // Catch a 3am rollover even if the page is left open overnight
