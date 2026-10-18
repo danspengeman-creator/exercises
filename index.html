@@ -256,6 +256,10 @@
   .dial .dir-arrow{position:absolute;top:3%;left:50%;width:min(96px,25vw);height:min(96px,25vw);transform:translateX(-50%);display:none;pointer-events:none;}
   .dial .dir-arrow svg{width:100%;height:100%;overflow:visible;}
   .dial .dir-arrow.dim{opacity:.35;}
+  .dial .total-left{position:absolute;bottom:8%;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap;line-height:1.15;pointer-events:none;}
+  .dial .total-left .lbl{display:block;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#cfd6db;}
+  .dial .total-left .val{display:block;font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:#fff;}
+  .switch-total{margin-top:12px;font-size:15px;color:#fff;font-family:'DM Mono',monospace;}
   .dial .unit{position:absolute;bottom:24%;font-size:13px;color:var(--sub);letter-spacing:.1em;text-transform:uppercase;}
 
   .switch{ /* namespace anchor, unused */ }
@@ -453,11 +457,13 @@
           <div class="dir-arrow" id="dir-arrow"></div>
           <div class="num" id="run-num">0</div>
           <div class="unit">sec</div>
+          <div class="total-left" id="total-left"><span class="lbl">Exercise time left</span><span class="val" id="total-left-val"></span></div>
         </div>
         <div class="switch-banner" id="switch-banner" style="display:none;">
           <div class="switch-title" id="switch-title">Switch directions</div>
           <div class="switch-next" id="switch-next"></div>
           <div class="switch-count" id="switch-count"></div>
+          <div class="switch-total" id="switch-total"></div>
         </div>
         <div class="break-banner" id="break-banner" style="display:none;">
           <div class="break-title">Taking a break</div>
@@ -540,7 +546,7 @@ const EXERCISES = [
   { id:8, name:"Scarecrow rotation stretch", cat:"Rotation", equip:"none",
     note:"Stand with both arms straight out to the sides like a scarecrow. One palm faces down (pronated) and the other faces up (supinated). Stretch the arms as far out from the body as they can go, hold, then turn both hands to the opposite positions and hold again. No rest between holds.",
     holdStages:[ { sec:5, label:"Left palm down, right palm up" }, { sec:5, label:"Left palm up, right palm down" } ],
-    restSec:0, reps:20 },
+    restSec:0, reps:20, midRest:{ sec:30 }, voiceCountdown:"rest" },
   { id:9, name:"Seated weighted lift", dirArrows:true, cat:"Strengthening", equip:"weight",
     note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:3, phaseGapSec:5,
@@ -570,7 +576,7 @@ const EXERCISES = [
       { label:"Pulling outward", reps:24 },
       { label:"Pulling inward", reps:24 },
     ]},
-  { id:15, name:"Ulnar nerve glide", cat:"Nerve", equip:"none",
+  { id:15, name:"Ulnar nerve glide", dirArrows:true, cat:"Nerve", equip:"none",
     note:"Like tossing a Q-tip away. Start with the hand pinched at the thumb and pointer finger as close to the ear as possible, hold, then sweep it out and away to the side, as if flicking a Q-tip off to the side, and hold there too.",
     holdStages:[ { sec:5, label:"Near ear" }, { sec:3, label:"Away from ear" } ],
     restSec:3, reps:10 },
@@ -722,7 +728,7 @@ function estimateSeconds(ex){
   }
   if(ex.holdStages){
     const perRep = ex.holdStages.reduce((a,s)=>a+s.sec,0);
-    return ex.reps*perRep + Math.max(0, ex.reps-1)*ex.restSec;
+    return ex.reps*perRep + Math.max(0, ex.reps-1)*ex.restSec + (ex.midRest ? ex.midRest.sec : 0);
   }
   if(ex.phases){
     let total = 0;
@@ -745,7 +751,7 @@ function totalProgramSeconds(){
 
 function specLine(ex){
   if(ex.type==="hold") return `${ex.holdSegments.length} holds &times; ${Math.round(ex.holdSegments[0]/60)} min, ${ex.holdBreakSec}s break between`;
-  if(ex.holdStages) return `${ex.reps} reps, ${ex.holdStages.map(s=>s.sec+"s").join(" + ")} hold, ${ex.restSec}s rest`;
+  if(ex.holdStages) return `${ex.reps} reps, ${ex.holdStages.map(s=>s.sec+"s").join(" + ")} hold, ${ex.restSec}s rest` + (ex.midRest ? `, ${ex.midRest.sec}s rest halfway` : "");
   if(ex.phases) return `${ex.phases.length} directions &times; ${ex.phases[0].reps} reps, ${ex.holdSec}s hold`;
   return `${ex.reps} reps, ${ex.holdSec}s hold, ${ex.restSec}s rest`;
 }
@@ -1365,7 +1371,12 @@ function tick(now){
   if(session.timeLeft <= 0){
     advanceState();
   } else {
-    if(current.voiceCountdown && (session.mode==="press" || session.mode==="rest" || session.mode==="hold" || session.mode==="holdbreak")){
+    // voiceCountdown:true speaks during holds and rests; "rest" speaks only during rests and breaks
+    const m = session.mode;
+    const speakNow = current.voiceCountdown === "rest"
+      ? (m==="rest" || m==="holdbreak")
+      : (current.voiceCountdown && (m==="press" || m==="rest" || m==="hold" || m==="holdbreak"));
+    if(speakNow){
       const secsLeft = Math.ceil(session.timeLeft);
       if(secsLeft !== session.lastSpokenSec){
         session.lastSpokenSec = secsLeft;
@@ -1431,8 +1442,10 @@ function advanceState(){
     session.mode = "rest";
     const phaseNow = session.phases[session.phaseIdx];
     const isPhaseBoundary = session.repInPhase >= phaseNow.reps && session.phaseIdx < session.phases.length - 1;
-    session.timeLeft = (isPhaseBoundary && current.phaseGapSec) ? current.phaseGapSec : current.restSec;
-    session.isPhaseGapRest = isPhaseBoundary && !!current.phaseGapSec;
+    const isMid = !!current.midRest && session.totalRepsDone === Math.floor(session.totalReps/2);
+    session.isMidRest = isMid;
+    session.timeLeft = isMid ? current.midRest.sec : ((isPhaseBoundary && current.phaseGapSec) ? current.phaseGapSec : current.restSec);
+    session.isPhaseGapRest = isMid || (isPhaseBoundary && !!current.phaseGapSec);
     if(session.timeLeft <= 0){
       // no rest between holds: roll straight into the next one
       session.isPhaseGapRest = false;
@@ -1474,6 +1487,8 @@ function render(){
   updateDirArrow(false);
 
   if(session.finished){
+    document.getElementById("total-left").style.display = "none";
+    document.getElementById("switch-total").textContent = "";
     dial.classList.add("mode-done");
     num.textContent = "Done";
     document.getElementById("run-dial").querySelector(".unit").textContent = "";
@@ -1501,6 +1516,12 @@ function render(){
   document.getElementById("btn-toggle").style.display = "inline-block";
 
   const secs = Math.max(0, Math.ceil(session.timeLeft));
+
+  // total time left in this exercise (holds, rests, direction switches, breaks)
+  const totalLeftText = formatTime(remainingExerciseSeconds());
+  document.getElementById("total-left").style.display = "";
+  document.getElementById("total-left-val").textContent = totalLeftText;
+  document.getElementById("switch-total").textContent = `Exercise time left: ${totalLeftText}`;
 
   if(current.type==="hold"){
     const dialEl = document.getElementById("run-dial");
@@ -1551,7 +1572,13 @@ function render(){
     banner.style.display = "block";
     stateWord.textContent = "";
     const nextPhase = session.phases[session.phaseIdx + 1];
-    document.getElementById("switch-next").textContent = nextPhase ? `Next: ${nextPhase.label}` : "";
+    if(session.isMidRest){
+      document.getElementById("switch-title").textContent = "Rest";
+      document.getElementById("switch-next").textContent = `Next: reps ${session.totalRepsDone+1} to ${session.totalReps}`;
+    } else {
+      document.getElementById("switch-title").textContent = "Switch directions";
+      document.getElementById("switch-next").textContent = nextPhase ? `Next: ${nextPhase.label}` : "";
+    }
     document.getElementById("switch-count").textContent = secs;
     repCounter.textContent = "";
     document.getElementById("run-dashes").innerHTML = "";
@@ -1575,6 +1602,38 @@ function render(){
   updateDirArrow(true);
 }
 
+// ---- Time left in the whole exercise, computed from the live state ----
+function remainingExerciseSeconds(){
+  const ex = current, s = session;
+  let total = Math.max(0, s.timeLeft);
+  if(ex.type === "hold"){
+    const seg = ex.holdSegments, brk = ex.holdBreakSec || 0;
+    if(s.mode === "hold"){
+      for(let i = s.holdIdx+1; i < seg.length; i++) total += brk + seg[i];
+    } else {
+      for(let i = s.holdIdx; i < seg.length; i++){ total += seg[i]; if(i > s.holdIdx) total += brk; }
+    }
+    return Math.ceil(total);
+  }
+  const stageSec = i => ex.holdStages ? ex.holdStages[i].sec : ex.holdSec;
+  let mode = s.mode, stage = s.stageIdx, done = s.totalRepsDone, inPhase = s.repInPhase, pIdx = s.phaseIdx;
+  for(let guard = 0; guard < 5000; guard++){
+    if(mode === "press"){
+      if(ex.holdStages && stage < ex.holdStages.length - 1){ stage++; total += stageSec(stage); continue; }
+      inPhase++; done++;
+      if(done >= s.totalReps) break;
+      const boundary = inPhase >= s.phases[pIdx].reps && pIdx < s.phases.length - 1;
+      const mid = !!ex.midRest && done === Math.floor(s.totalReps/2);
+      total += mid ? ex.midRest.sec : ((boundary && ex.phaseGapSec) ? ex.phaseGapSec : ex.restSec);
+      mode = "rest";
+    } else {
+      if(inPhase >= s.phases[pIdx].reps){ pIdx++; inPhase = 0; }
+      mode = "press"; stage = 0; total += stageSec(0);
+    }
+  }
+  return Math.ceil(total);
+}
+
 // ---- Direction arrow inside the dial ----
 const ARROW_COLOR = "#ffe14d";
 function arrowSvg(dir){
@@ -1589,6 +1648,8 @@ function arrowSvg(dir){
 function dirFromLabel(label){
   const t = (label||"").toLowerCase();
   if(/sideways/.test(t)) return "side";
+  if(/near.*ear/.test(t)) return "left";
+  if(/away.*ear/.test(t)) return "right";
   if(/\bup/.test(t)) return "up";
   if(/\bdown/.test(t)) return "down";
   if(/\bleft/.test(t)) return "left";
