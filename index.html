@@ -71,6 +71,8 @@
   .tl-list::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:var(--line);}
   .tl-item{position:relative;padding:0 0 22px;}
   .tl-item::before{content:"";position:absolute;left:-24px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--c,var(--sub));border:3px solid var(--card);box-sizing:content-box;margin-left:-3px;}
+  .tl-item.future{opacity:.8;}
+  .tl-item.future::before{background:var(--card);border:3px solid var(--c);}
   .tl-date{font-size:13px;color:var(--c,var(--sub));font-weight:500;letter-spacing:.02em;}
   .tl-day{color:var(--sub);font-weight:400;}
   .tl-title{font-family:'Fraunces',serif;font-size:20px;line-height:1.25;margin-top:3px;color:var(--text);}
@@ -579,6 +581,20 @@
     localStorage.setItem("pt-timer-order-v2","1");
   }catch(e){ /* ignore */ }
 })();
+(function migrateOrder3(){
+  try{
+    if(localStorage.getItem("pt-timer-order-v3")) return;
+    const map = {1:1,2:2,3:3,4:4,5:5,6:6,8:7,15:8,9:9,10:10,13:11,11:12,12:13,14:14,7:15};
+    ["pt-timer-feedback","pt-timer-completed"].forEach(k=>{
+      const raw = localStorage.getItem(k);
+      if(!raw) return;
+      const o = JSON.parse(raw), n = {};
+      Object.keys(o).forEach(id=>{ n[map[id] || id] = o[id]; });
+      localStorage.setItem(k, JSON.stringify(n));
+    });
+    localStorage.setItem("pt-timer-order-v3","1");
+  }catch(e){ /* ignore */ }
+})();
 const EXERCISES = [
   { id:1, name:"Seated flexion overpressure", cat:"Flexion", equip:"none", voiceCountdown:true,
     note:"Passive-assisted elbow flexion stretch. Target intensity 5 to 7 out of 10. Hold each rep for a full minute with steady pressure. Can also be done standing, using the wall to push against the back of the hand or wrist for additional overpressure.",
@@ -592,23 +608,24 @@ const EXERCISES = [
   { id:4, name:"Standing table push extension", cat:"Extension", equip:"none",
     note:"Stand with hands on a table at a slight angle, holding yourself up, then push outward through both arms and shoulders to straighten the arms as much as possible.",
     holdSec:5, restSec:3, reps:20 },
-  { id:5, name:"Standing wall push", cat:"Extension", equip:"none",
-    note:"Stand back from a wall and push through both arms to straighten them as much as possible. Keep the elbows pointing down toward the floor, not out to the sides, so the triceps do the work. Push into the wall, hold, then push away from the wall.",
-    holdSec:3, restSec:2, reps:20 },
+  { id:5, name:"Push-ups", cat:"Extension", equip:"none",
+    note:"Keep the elbows pointing back toward the hips, not out to the sides, so the triceps do the work. Press up until the arms are as straight as possible, hold, then lower under control.",
+    holdSec:2, restSec:1, reps:25 },
   { id:6, name:"Scarecrow rotation stretch", cat:"Rotation", equip:"none",
     note:"Stand with both arms straight out to the sides like a scarecrow. One palm faces down (pronated) and the other faces up (supinated). Stretch the arms as far out from the body as they can go, hold, then turn both hands to the opposite positions and hold again. No rest between holds.",
     holdStages:[ { sec:5, label:"Left palm down, right palm up" }, { sec:5, label:"Left palm up, right palm down" } ],
     restSec:0, reps:20, midRest:{ sec:30 }, voiceCountdown:"rest" },
-  { id:7, name:"Elbow distraction stretch", cat:"Flexion", equip:"towel", voiceCountdown:true,
-    note:"Similar to seated flexion overpressure, but with a rolled towel or small pillow placed in the fold of the elbow to add distraction.",
-    holdSec:10, restSec:5, reps:20 },
-  { id:8, name:"Standing extension and flexion", cat:"Flexion/Extension", equip:"none", voiceCountdown:true,
+  { id:7, name:"Standing extension and flexion", cat:"Flexion/Extension", equip:"none", voiceCountdown:true,
     note:"Self-resistance against the wrist. For flexion, push down on the wrist and try to bring the arm up. For extension, push up on the wrist with resistance and let it release back down. A longer rest kicks in when switching to the next phase.",
     holdSec:8, restSec:2, phaseGapSec:5,
     phases:[
       { label:"Flexion", reps:20 },
       { label:"Extension", reps:20 },
     ]},
+  { id:8, name:"Ulnar nerve glide", dirArrows:true, cat:"Nerve", equip:"none",
+    note:"Like tossing a Q-tip away. Start with the hand pinched at the thumb and pointer finger as close to the ear as possible, hold, then sweep it out and away to the side, as if flicking a Q-tip off to the side, and hold there too.",
+    holdStages:[ { sec:5, label:"Near ear" }, { sec:3, label:"Away from ear" } ],
+    restSec:3, reps:10 },
   { id:9, name:"Seated weighted lift", dirArrows:true, cat:"Strengthening", equip:"weight",
     note:"Arm rotated through three directions with a weight, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:5, restSec:3, phaseGapSec:5,
@@ -621,16 +638,16 @@ const EXERCISES = [
     note:"Hold a weight with the arm straight, starting turned left, then rotate to the right and back, holding at each side.",
     holdStages:[ { sec:5, label:"Turn left" }, { sec:5, label:"Turn right" } ],
     restSec:3, reps:20 },
-  { id:11, name:"Resistance band triceps kickback", cat:"Extension", equip:"band",
-    note:"Anchor the band low, near ankle height. Hinge forward slightly at the hips, pin the elbow against the side at about 90 degrees, then straighten the arm back until fully extended. Hold at the top, then return to 90 degrees.",
-    holdSec:5, restSec:2, reps:20 },
-  { id:12, name:"Resistance band triceps pulldown", cat:"Extension", equip:"band",
-    note:"Hold the band from above, similar to the kickback. Start with the elbow bent at 90 degrees and pull the band down until the arm is as straight as possible. Hold at the bottom, then return to 90 degrees.",
-    holdSec:5, restSec:3, reps:20 },
-  { id:13, name:"Standing chop", dirArrows:true, cat:"Functional", equip:"none",
+  { id:11, name:"Standing chop", dirArrows:true, cat:"Functional", equip:"none",
     note:"Standing preferred, chopping motion with the hand, up and down.",
     holdStages:[ { sec:3, label:"Chop up" }, { sec:3, label:"Chop down" } ],
     restSec:2, reps:20 },
+  { id:12, name:"Resistance band triceps kickback", cat:"Extension", equip:"band",
+    note:"Anchor the band low, near ankle height. Hinge forward slightly at the hips, pin the elbow against the side at about 90 degrees, then straighten the arm back until fully extended. Hold at the top, then return to 90 degrees.",
+    holdSec:5, restSec:2, reps:20 },
+  { id:13, name:"Resistance band triceps pulldown", cat:"Extension", equip:"band",
+    note:"Hold the band from above, similar to the kickback. Start with the elbow bent at 90 degrees and pull the band down until the arm is as straight as possible. Hold at the bottom, then return to 90 degrees.",
+    holdSec:5, restSec:3, reps:20 },
   { id:14, name:"Towel pull", cat:"Strengthening", equip:"towel",
     note:"Pulling a towel with the hand, one set per direction. A longer rest kicks in when switching direction.",
     holdSec:3, restSec:2, phaseGapSec:5,
@@ -638,10 +655,9 @@ const EXERCISES = [
       { label:"Pulling outward", reps:24 },
       { label:"Pulling inward", reps:24 },
     ]},
-  { id:15, name:"Ulnar nerve glide", dirArrows:true, cat:"Nerve", equip:"none",
-    note:"Like tossing a Q-tip away. Start with the hand pinched at the thumb and pointer finger as close to the ear as possible, hold, then sweep it out and away to the side, as if flicking a Q-tip off to the side, and hold there too.",
-    holdStages:[ { sec:5, label:"Near ear" }, { sec:3, label:"Away from ear" } ],
-    restSec:3, reps:10 },
+  { id:15, name:"Elbow distraction stretch", cat:"Flexion", equip:"towel", voiceCountdown:true,
+    note:"Similar to seated flexion overpressure, but with a rolled towel or small pillow placed in the fold of the elbow to add distraction.",
+    holdSec:10, restSec:5, reps:20 },
 ];
 
 // ---- Orientation lock ----
@@ -989,10 +1005,10 @@ function closeCopyPopup(e){
 // ---- Recovery timeline (edit these lists to update the page) ----
 const INJURY_DATE = "2026-05-26";
 const PIN_REMOVAL_DATE = "2026-08-26";
-const PT_VISITS = ["2026-07-09","2026-07-14","2026-07-16","2026-07-21","2026-07-23","2026-07-28","2026-07-30","2026-08-04","2026-08-07","2026-08-11","2026-08-14","2026-08-18","2026-08-20","2026-08-28","2026-09-04","2026-09-08","2026-09-10","2026-09-15","2026-09-17","2026-09-24","2026-10-08","2026-10-13","2026-10-22","2026-10-29"];
+const PT_VISITS = ["2026-07-09","2026-07-14","2026-07-16","2026-07-21","2026-07-23","2026-07-28","2026-07-30","2026-08-04","2026-08-07","2026-08-11","2026-08-14","2026-08-18","2026-08-20","2026-08-28","2026-09-04","2026-09-08","2026-09-10","2026-09-15","2026-09-17","2026-09-24","2026-10-08","2026-10-13","2026-10-22","2026-10-29","2026-11-03","2026-11-10","2026-11-19"];
 // Add a new line per measurement. Newest goes last. Each ext line is one measurement.
 const ROM_READINGS = [
-  {date:"2026-10-13", flexion:"135 (likely higher)", ext:["Passive with PT: 0 degrees, fully straight","Standing hang, right: 25 degrees short","Standing hang, left (uninjured): 15 degrees"]},
+  {date:"2026-10-13", flexion:"135", ext:["Flexion likely higher","Passive with PT: 0 degrees, fully straight","Standing hang, right: 25 degrees short","Standing hang, left (uninjured): 15 degrees"]},
   {date:"2026-11-01", flexion:"135", ext:["Standing: lacked 15 degrees","Recently pushed to 3+ degrees of hyperextension"]}
 ];
 const TL_TYPES = {
@@ -1015,10 +1031,16 @@ const TL_EVENTS = [
   {date:"2026-08-26", type:"surgery", big:true, title:"Pins removed", note:"Second surgery. Real progress only came after this."},
   {date:"2026-08-27", type:"win", big:true, title:"Real improvement begins", note:"Arm felt stronger and freer with less pain. Lying weighted hang reached the floor quickly."},
   {date:"2026-09-02", type:"ortho", title:"Post-op ortho follow-up"},
-  {date:"2026-09-09", type:"acu", big:true, title:"Acupuncture starts", note:"Dr. Alyssa Risi, Elite Sports Physical Therapy, Tinton Falls. Recommended by Megan. Electro-acupuncture with a tricep focus, heat lamp, static cupping and gua sha. Weekly Wednesdays at 5:30 since."},
+  {date:"2026-09-09", type:"acu", big:true, title:"Acupuncture starts", note:"Dr. Alyssa Risi, Elite Sports Physical Therapy, Tinton Falls. Recommended by Megan. Electro-acupuncture with a tricep focus, heat lamp, static cupping and gua sha. Weekly on Wednesdays at 5:30."},
   {date:"2026-10-13", type:"win", title:"Passive extension reached 0 degrees", note:"Fully straight with PT. Flexion last measured at 135 degrees, likely higher."},
   {date:"2026-10-18", type:"splint", title:"Dynasplint returned", note:"Approximate date. Out of the mix."},
-  {date:"2026-11-01", type:"win", big:true, title:"Latest range of motion", note:"Flexion about 135 degrees. Extension: standing lack of 15 degrees, recently pushed to 3+ degrees of hyperextension."}
+  {date:"2026-11-01", type:"win", big:true, title:"Latest range of motion", note:"Flexion about 135 degrees. Extension: standing lack of 15 degrees, recently pushed to 3+ degrees of hyperextension."},
+  {date:"2026-11-24", type:"pt", title:"PT with Megan", note:"Last weekly PT visit."},
+  {date:"2026-12-02", type:"acu", big:true, title:"Acupuncture: last weekly visit", note:"Switching from every week to every other week."},
+  {date:"2026-12-03", type:"pt", big:true, title:"PT switches to every other week", note:"First every-other-week PT visit."},
+  {date:"2026-12-03", type:"ortho", title:"Ortho visit", note:"One of the last orthopedic appointments."},
+  {date:"2026-12-16", type:"acu", title:"Final acupuncture visit"},
+  {date:"2026-12-17", type:"pt", big:true, title:"Final PT visit", note:"End of supervised therapy. Everything after this is the home routine."}
 ];
 
 function tlDate(iso){
@@ -1048,8 +1070,9 @@ function openTimeline(){
   let html = ev.map(e=>{
     const t = TL_TYPES[e.type] || TL_TYPES.pt;
     const day = tlDays(INJURY_DATE,e.date);
-    return `<li class="tl-item${e.big?" big":""}" style="--c:${t.color}">
-      <div class="tl-date">${tlDate(e.date)} <span class="tl-day">&middot; day ${day}</span></div>
+    const future = e.date > today;
+    return `<li class="tl-item${e.big?" big":""}${future?" future":""}" style="--c:${t.color}">
+      <div class="tl-date">${e.dateLabel || tlDate(e.date)} <span class="tl-day">&middot; ${future?"upcoming":"day "+day}</span></div>
       <div class="tl-title">${e.title}</div>
       ${e.note?`<div class="tl-note">${e.note}</div>`:""}
     </li>`;
@@ -1060,9 +1083,9 @@ function openTimeline(){
       <div class="tl-pt-dots">${PT_VISITS.map(d=>`<span>${new Date(d+"T12:00:00").toLocaleDateString("en-US",{month:"numeric",day:"numeric"})}</span>`).join("")}</div>
     </li>
     <li class="tl-item" style="--c:${TL_TYPES.acu.color}">
-      <div class="tl-date">Sep 9 to present</div>
-      <div class="tl-title">Weekly acupuncture</div>
-      <div class="tl-note">Wednesdays at 5:30. Electro-acupuncture, tricep focus.</div>
+      <div class="tl-date">Sep 9 to Dec 16</div>
+      <div class="tl-title">Acupuncture: weekly, then every other week</div>
+      <div class="tl-note">Wednesdays at 5:30, the day before PT. Electro-acupuncture, tricep focus. Every other week from Dec 2.</div>
     </li>`;
   document.getElementById("tl-list").innerHTML = html;
   showScreen("screen-timeline");
